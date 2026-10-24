@@ -1,0 +1,6 @@
+# build outputs (released binaries are kept in releases/)
+build/
+
+# host test outputs
+test/out/
+test/host_test

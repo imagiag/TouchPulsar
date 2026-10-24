@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Pulsar Touch</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="dot" id="led"></span><h1>Pulsar <em>Touch</em></h1>
+    <span class="sub">pulsar synthesis after Roads (2001) · Synthux Simple Touch layout</span></div>
+  <div class="actions">
+    <select id="preset" aria-label="Preset"></select>
+    <button id="power" class="primary">Start audio</button>
+  </div>
+</header>
+
+<main>
+  <!-- ======== hardware replica ======== -->
+  <section class="board-wrap">
+    <div class="board" id="board">
+      <div class="seed"><span>daisy seed</span><b id="seedLed"></b></div>
+      <!-- pads, knobs, faders and switches are created by app.js -->
+    </div>
+    <p class="hint" id="layerHint">Hold <b>P10 / Shift</b> for the second knob layer · hold <b>P11 / W</b> for scales</p>
+  </section>
+
+  <!-- ======== display & analysis ======== -->
+  <section class="side">
+    <div class="oled">
+      <div class="oled-row">
+        <span class="tag c-range" id="dRange">TONE</span>
+        <span class="big" id="dFund">— Hz</span>
+        <span class="tag c-mask" id="dMask">NO MASK</span>
+      </div>
+      <div class="oled-row small">
+        <span>f<sub>d</sub> <b id="dForm">—</b></span>
+        <span id="dNote"></span>
+        <span><b id="dScale">Major</b> <span id="dOct"></span></span>
+        <span class="flags"><i id="fMidi">MIDI</i><i id="fExt">EXT</i><i id="fHold">HOLD</i><i id="fConv">CONV</i><i id="fRec">REC</i></span>
+      </div>
+      <canvas id="cvPulsaret" height="120"></canvas>
+      <div class="cap"><span id="dDuty">d — · p —</span><span id="dShape">sine · gauss</span></div>
+      <canvas id="cvTrain" height="70"></canvas>
+      <div class="cap"><span>pulse train · last 3 s</span><span id="dCount">0 pulsars</span></div>
+      <div class="toast" id="toast"></div>
+    </div>
+
+    <div class="scopes">
+      <canvas id="cvScope" height="110"></canvas>
+      <canvas id="cvSpec" height="110"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>Convolution sample</h2>
+      <p class="muted">Each pulsar triggers a copy of <i>pulsaret ∗ sample</i> (paper §3.3). Tap <b>P01</b> to toggle, hold <b>P01</b> to record the input; mix is <b>P10 + S35</b>.</p>
+      <div class="row">
+        <select id="demoSample"><option value="">Demo sample…</option></select>
+        <label class="btn">Load file<input type="file" id="file" accept="audio/*" hidden></label>
+        <button id="mic">Enable input</button>
+      </div>
+      <canvas id="cvSample" height="44"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>MIDI</h2>
+      <p class="muted">Notes play fully chromatic; the scale only applies to the pads. Velocity → level, aftertouch → pressure, bend, mod wheel → formant, sustain pedal, clock → RHYTHM tempo. CC map under Controls.</p>
+      <div class="row">
+        <button id="midiBtn">Enable MIDI</button>
+        <label class="chk"><input type="checkbox" id="rootFromMidi"> Root from MIDI (lowest held note)</label>
+        <label class="chk">Bend ±<input type="number" id="bendRange" value="2" min="0" max="24"> st</label>
+      </div>
+      <p class="muted" id="midiStatus" style="margin:0">Off</p>
+    </div>
+
+    <details class="card" id="help">
+      <summary>Controls &amp; keyboard</summary>
+      <div id="helpBody"></div>
+    </details>
+  </section>
+</main>
+
+<script src="engine/pulsar-core.js"></script>
+<script src="engine/pulsar-controls.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

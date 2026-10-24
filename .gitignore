@@ -1,0 +1,5 @@
+# macOS
+.DS_Store
+
+# browser prototype test renders
+web/test/out/
