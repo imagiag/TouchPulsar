@@ -32,7 +32,7 @@ public:
     // hardware / host input
     void SetSwitch(int i, int pos) { sw[i] = pos; }
     void PadDown(int i, float pressure);
-    void PadMove(int i, float pressure) { if (touched[i]) this->pressure[i] = pressure; }
+    void PadMove(int i, float pressure);
     void PadUp(int i);
     void Midi(uint8_t status, uint8_t d1, uint8_t d2, double t);
     void Tick(double now);
@@ -82,6 +82,8 @@ private:
     int stack_[kStack]; int stackN_ = 0;
     int lastKey_ = 3, latchedKey_ = -1;
     double now_ = 0, padDownAt_[12], comboAt_ = -1;
+    float pressPeak_[12], heldPress_[12]; // recent peak while touched; pressure kept after release
+    double pressPeakAt_[12];
     bool recalDone_ = false;
     uint8_t consumed_[12];
     double taps_[4]; int tapN_ = 0;

@@ -94,6 +94,13 @@ compare('chorus', 4, (c, t) => {
   c.knob[PC.K_SPREAD] = 0.4; c.alt[PC.K_FUND] = t / 4; c.knob[PC.K_FUND] = 0.4;
   if (!c.touched[5]) c.padDown(5, 0.7);
 });
+compare('pressure_hold', 3, (c, t, b) => {
+  if (b === 0) { c.knob[PC.K_FUND] = 0; c.alt[PC.K_FORMANT] = 0.8; c.alt[PC.K_WINDOW] = 0.6; }
+  if (b === 10) { c.padDown(PC.P_TO, .7); c.padDown(PC.P_CH, .7); c.padUp(PC.P_CH); c.padUp(PC.P_TO); }
+  if (t > 0.3 && t < 1.2 && !c.touched[6]) c.padDown(6, 0.3);
+  if (c.touched[6]) c.padMove(6, t < 1.0 ? Math.fround(0.3 + 0.6 * (t - 0.3) / 0.7) : Math.fround(0.9 - (t - 1.0) * 4.0));
+  if (t >= 1.2 && c.touched[6]) c.padUp(6);
+});
 compare('conv', 3, (c) => {
   c.setSwitch(PC.SW_RANGE, 2); c.setSwitch(PC.SW_MASK, 1); c.convOn = true; c.alt[PC.K_MASK] = 1;
   c.knob[PC.K_MASK] = 0.1; if (!c.touched[7]) c.padDown(7, 0.7);

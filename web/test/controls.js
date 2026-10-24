@@ -204,6 +204,24 @@ c.cc(84, 0); eq(c.compute(new PulsarParams()).chorus, 0, 'CC84 = chorus');
   assert(ens.side > 0.2, 'ensemble: wide stereo, got ' + ens.side); pass++;
 }
 
+// --- released pads keep the pressure they had (finger lift ignored) ---
+{
+  const lift = (latch) => { const c = new PulsarControls(); c.alt[PC.K_FORMANT] = 1; c.tick(10); if (latch) c.toggleLatch();
+    c.padDown(5, 0.4); c.tick(10.1); c.padMove(5, 0.9); c.tick(10.4); c.padMove(5, 0.9);
+    const during = c.compute(new PulsarParams());
+    [0.6, 0.3, 0.1].forEach((v, k) => { c.tick(10.42 + k * 0.02); c.padMove(5, v); }); // finger lifting
+    c.tick(10.48); c.padUp(5);
+    return { during, after: c.compute(new PulsarParams()) }; };
+  const t = lift(false), h = lift(true);
+  near(t.after.formantHz[0], t.during.formantHz[0], 1e-6, 'release tail keeps the formant push of the held pressure');
+  eq(t.after.gate, 0, 'release tail: gate off');
+  near(h.after.gate, 0.55 + 0.45 * 0.9, 1e-6, 'hold keeps the released pressure (0.9), not the default');
+  // a slow, deliberate softening is followed (peak expires after 0.15 s)
+  const c = new PulsarControls(); c.tick(1); c.toggleLatch(); c.padDown(5, 0.9);
+  for (let k = 1; k <= 10; k++) { c.tick(1 + k * 0.1); c.padMove(5, 0.9 - k * 0.06); }
+  c.padUp(5); near(c.compute(new PulsarParams()).gate, 0.55 + 0.45 * 0.3, 0.03, 'slow softening is followed');
+}
+
 // --- hold (latch) on short P10+P11, recalibrate on long ---
 c = new PulsarControls(); c.tick(10);
 c.padDown(PC.P_TO, .7); c.padDown(PC.P_CH, .7); c.tick(10.2); c.padUp(PC.P_CH); c.padUp(PC.P_TO);

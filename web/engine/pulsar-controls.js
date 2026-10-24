@@ -42,6 +42,7 @@ var PC = {
   BURSTS: [[1, 0], [7, 1], [6, 1], [5, 1], [4, 1], [3, 1], [5, 2], [2, 1], [5, 3], [3, 2], [4, 3],
            [1, 1], [3, 4], [2, 3], [3, 5], [1, 2], [2, 5], [1, 3], [1, 4], [1, 5], [1, 6]],
   HOLD_SEC: 0.4,
+  PRESS_PEAK_SEC: 0.15,      // on release, keep the highest pressure of this last window (ignores the finger lift)
   LEGATO_GLIDE_SEC: 0.06,    // TONE: fixed portamento for overlapping MIDI notes
   LATCH_MAX_SEC: 1.0,        // P10+P11 shorter than this toggles hold
   RECAL_SEC: 1.5,            // P10+P11 held this long recalibrates the pads (hardware)
@@ -64,6 +65,8 @@ function PulsarControls() {
   this.sw = [0, 0];
   this.touched = new Uint8Array(12);
   this.pressure = new Float32Array(12);
+  this.pressPeak = new Float32Array(12); this.pressPeakAt = new Float64Array(12);
+  this.heldPress = new Float32Array(12).fill(0.6); // pressure each pad had when released
   this.stack = [];           // held note keys (pads 3..9, MIDI 128+n), last = active
   this.lastKey = 3;          // pitch source after release (keeps the release tail in tune)
   this.oct = 0;              // pad shift: octaves, or 7-semitone pages in Chromatic
@@ -152,6 +155,7 @@ PulsarControls.prototype.toggleLatch = function () {
 // ---- pads ----
 PulsarControls.prototype.padDown = function (i, pressure) {
   this.touched[i] = 1; this.pressure[i] = pressure; this.padDownAt[i] = this.now; this.consumed[i] = 0;
+  this.pressPeak[i] = pressure; this.pressPeakAt[i] = this.now;
   var to = this.touched[PC.P_TO], ch = this.touched[PC.P_CH];
 
   if ((i === PC.P_TO && ch) || (i === PC.P_CH && to)) { // TO + CH: tap = hold (latch), long = recalibrate
@@ -204,11 +208,19 @@ PulsarControls.prototype.setRoot = function (semis) {
   this._ev('root', 'Root: ' + this.rootName(), 1);
 };
 
-PulsarControls.prototype.padMove = function (i, pressure) { if (this.touched[i]) this.pressure[i] = pressure; };
+PulsarControls.prototype.padMove = function (i, pressure) {
+  if (!this.touched[i]) return;
+  this.pressure[i] = pressure;
+  // recent peak: follows rises at once, follows falls only after PRESS_PEAK_SEC
+  if (pressure >= this.pressPeak[i] || this.now - this.pressPeakAt[i] > PC.PRESS_PEAK_SEC) {
+    this.pressPeak[i] = pressure; this.pressPeakAt[i] = this.now;
+  }
+};
 
 PulsarControls.prototype.padUp = function (i) {
   if (!this.touched[i]) return;
   this.touched[i] = 0;
+  this.heldPress[i] = this.now - this.pressPeakAt[i] <= PC.PRESS_PEAK_SEC ? this.pressPeak[i] : this.pressure[i];
   var held = this.now - this.padDownAt[i];
   if ((i === PC.P_TO || i === PC.P_CH) && this.comboAt >= 0) {
     if (!this.recalDone && this.now - this.comboAt < PC.LATCH_MAX_SEC) this.toggleLatch();
@@ -336,14 +348,12 @@ PulsarControls.prototype.compute = function (out) {
   var bpm = this.bpm(), bendMul = Math.pow(2, this.bend * this.bendRange / 12);
 
   // per-note expression: pads -> touch pressure; MIDI -> velocity + aftertouch
-  var press = 0, gate = 0;
-  if (key >= 0 && isMidi) {
-    press = Math.max(this.midiAT[n], this.chanAT);
-    gate = Math.min(1, (0.3 + 0.7 * this.midiVel[n]) * (0.85 + 0.3 * press));
-  } else if (key >= 0) {
-    press = this.touched[key] ? this.pressure[key] : 0.6;
-    gate = 0.55 + 0.45 * press;
-  }
+  // released notes (hold, or the release tail) keep the pressure they had when let go
+  var press = isMidi ? Math.max(this.midiAT[n], this.chanAT)
+            : (this.touched[src] ? this.pressure[src] : this.heldPress[src]);
+  var gate = 0;
+  if (key >= 0 && isMidi) gate = Math.min(1, (0.3 + 0.7 * this.midiVel[n]) * (0.85 + 0.3 * press));
+  else if (key >= 0) gate = 0.55 + 0.45 * press;
 
   // semitones above C2 for TONE / FREE; subdivision + octave for RHYTHM
   var semis = isMidi ? n - 36 : this.padSemis(src);

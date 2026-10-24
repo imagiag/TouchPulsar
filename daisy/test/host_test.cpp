@@ -65,6 +65,15 @@ static void controlsTests() {
     fl.Midi(0xB0, 102, 0, 0); fl.Midi(0xB0, 103, 127, 0); fl.Compute(p);
     NEAR(p.cutoffHz, 30, 0.01, "CC102 = cutoff"); NEAR(p.resonance, 1, 1e-6, "CC103 = resonance");
 
+    { // released pads keep the pressure they had (finger lift ignored)
+        Controls h; h.Tick(10); h.PadDown(P_TO, .7f); h.PadDown(P_CH, .7f); h.PadUp(P_CH); h.PadUp(P_TO); // hold on
+        h.PadDown(5, 0.4f); h.Tick(10.1); h.PadMove(5, 0.9f); h.Tick(10.4); h.PadMove(5, 0.9f);
+        const float lifts[3] = {0.6f, 0.3f, 0.1f};
+        for (int k = 0; k < 3; k++) { h.Tick(10.42 + k * 0.02); h.PadMove(5, lifts[k]); }
+        h.Tick(10.48); h.PadUp(5); h.Compute(p);
+        NEAR(p.gate, 0.55 + 0.45 * 0.9, 1e-5, "hold keeps the released pressure");
+    }
+
     Controls l; l.Tick(10);
     l.PadDown(P_TO, .7f); l.PadDown(P_CH, .7f); l.Tick(10.2); l.PadUp(P_CH); l.PadUp(P_TO);
     CHECK(l.latch, "short TO+CH = hold");
@@ -177,6 +186,13 @@ int main() {
     render("chorus", 4, [](Controls& c, double t, int) { // chorus sweeping into ensemble
         c.knob[K_SPREAD] = 0.4f; c.alt[K_FUND] = (float)(t / 4); c.knob[K_FUND] = 0.4f;
         if (!c.touched[5]) c.PadDown(5, 0.7f);
+    });
+    render("pressure_hold", 3, [](Controls& c, double t, int b) { // play, lift with a falling pressure, hold keeps it
+        if (b == 0) { c.knob[K_FUND] = 0.f; c.alt[K_FORMANT] = 0.8f; c.alt[K_WINDOW] = 0.6f; }
+        if (b == 10) { c.PadDown(P_TO, .7f); c.PadDown(P_CH, .7f); c.PadUp(P_CH); c.PadUp(P_TO); }
+        if (t > 0.3 && t < 1.2 && !c.touched[6]) c.PadDown(6, 0.3f);
+        if (c.touched[6]) c.PadMove(6, t < 1.0 ? (float)(0.3 + 0.6 * (t - 0.3) / 0.7) : (float)(0.9 - (t - 1.0) * 4.0));
+        if (t >= 1.2 && c.touched[6]) c.PadUp(6);
     });
     render("conv", 3, [](Controls& c, double, int) {
         c.SetSwitch(SW_RANGE, RHYTHM); c.SetSwitch(SW_MASK, 1); c.convOn = true; c.alt[K_MASK] = 1;

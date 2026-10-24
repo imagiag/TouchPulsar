@@ -27,6 +27,7 @@ static const int kCcMap[16][3] = {
 };
 enum { CC_CUTOFF = 102, CC_RES = 103, CC_IN_GAIN = 104, CC_MOTION = 105, CC_MOD = 1, CC_SUSTAIN = 64, CC_RANGE = 86, CC_MASKMODE = 87, CC_BEND_RANGE = 88, CC_ROOT_FROM_MIDI = 89 };
 static constexpr float kLegatoGlideSec = 0.06f;
+static constexpr double kPressPeakSec = 0.15; // on release, keep the highest pressure of this last window
 static constexpr double kHoldSec = 0.4, kLatchMaxSec = 1.0, kRecalSec = 1.5;
 
 static inline float pcExp(float v, float lo, float hi) { return lo * powf(hi / lo, v); }
@@ -39,7 +40,10 @@ Controls::Controls() {
     ch[K_FUND] = 1.f;   // filter fully open
     ch[K_MASK] = 0.5f;  // input gain 0 dB
     sw[0] = sw[1] = 0;
-    for (int i = 0; i < 12; i++) { touched[i] = 0; pressure[i] = 0.f; padDownAt_[i] = 0; consumed_[i] = 0; }
+    for (int i = 0; i < 12; i++) {
+        touched[i] = 0; pressure[i] = 0.f; padDownAt_[i] = 0; consumed_[i] = 0;
+        pressPeak_[i] = 0.f; pressPeakAt_[i] = 0; heldPress_[i] = 0.6f;
+    }
     for (int i = 0; i < 128; i++) { midiVel_[i] = 0.f; midiAT_[i] = 0.f; }
 }
 
@@ -99,6 +103,7 @@ void Controls::setRoot(int semis) {
 // ---- pads ----
 void Controls::PadDown(int i, float pr) {
     touched[i] = 1; pressure[i] = pr; padDownAt_[i] = now_; consumed_[i] = 0;
+    pressPeak_[i] = pr; pressPeakAt_[i] = now_;
     const bool to = touched[P_TO], ch = touched[P_CH];
 
     if ((i == P_TO && ch) || (i == P_CH && to)) { // TO + CH: tap = hold (latch), long = recalibrate
@@ -135,9 +140,17 @@ void Controls::PadDown(int i, float pr) {
     if (i >= 3 && i <= 9) push(i);
 }
 
+// recent peak: follows rises at once, follows falls only after kPressPeakSec
+void Controls::PadMove(int i, float pr) {
+    if (!touched[i]) return;
+    pressure[i] = pr;
+    if (pr >= pressPeak_[i] || now_ - pressPeakAt_[i] > kPressPeakSec) { pressPeak_[i] = pr; pressPeakAt_[i] = now_; }
+}
+
 void Controls::PadUp(int i) {
     if (!touched[i]) return;
     touched[i] = 0;
+    heldPress_[i] = now_ - pressPeakAt_[i] <= kPressPeakSec ? pressPeak_[i] : pressure[i];
     const double held = now_ - padDownAt_[i];
     if ((i == P_TO || i == P_CH) && comboAt_ >= 0) {
         if (!recalDone_ && now_ - comboAt_ < kLatchMaxSec) toggleLatch();
@@ -260,14 +273,11 @@ void Controls::Compute(Params& out) const {
     const int n = src - kMidiKey;
     const float bpm = Bpm(), bendMul = powf(2.f, bend_ * bendRange / 12.f);
 
-    float press = 0.f, gate = 0.f;
-    if (key >= 0 && isMidi) {
-        press = fmaxf(midiAT_[n], chanAT_);
-        gate = fminf(1.f, (0.3f + 0.7f * midiVel_[n]) * (0.85f + 0.3f * press));
-    } else if (key >= 0) {
-        press = touched[key] ? pressure[key] : 0.6f;
-        gate = 0.55f + 0.45f * press;
-    }
+    // released notes (hold, or the release tail) keep the pressure they had when let go
+    const float press = isMidi ? fmaxf(midiAT_[n], chanAT_) : (touched[src] ? pressure[src] : heldPress_[src]);
+    float gate = 0.f;
+    if (key >= 0 && isMidi) gate = fminf(1.f, (0.3f + 0.7f * midiVel_[n]) * (0.85f + 0.3f * press));
+    else if (key >= 0) gate = 0.55f + 0.45f * press;
 
     const int semis = isMidi ? n - 36 : PadSemis(src);
     const int subIdx = isMidi ? kPcToSubdiv[n % 12] : src - 3;
