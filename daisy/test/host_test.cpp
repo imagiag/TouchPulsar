@@ -142,7 +142,7 @@ int main() {
     });
     render("rhythm_burst", 4, [](Controls& c, double, int) {
         c.SetSwitch(SW_RANGE, RHYTHM); c.knob[K_MASK] = 0.4f; c.knob[K_CLUSTER] = 0.33f; c.alt[K_CLUSTER] = 0.8f;
-        c.knob[K_SPREAD] = 0.6f; c.alt[K_FUND] = 0.4f; if (!c.touched[6]) c.PadDown(6, 0.8f);
+        c.knob[K_SPREAD] = 0.6f; c.tempo = 120.f; if (!c.touched[6]) c.PadDown(6, 0.8f);
     });
     render("stoch_fold", 3, [](Controls& c, double, int) {
         c.SetSwitch(SW_MASK, 2); c.knob[K_MASK] = 0.15f; c.alt[K_SHAPE] = 1; c.knob[K_SHAPE] = 0.5f;
@@ -173,6 +173,10 @@ int main() {
     render("motion", 4, [](Controls& c, double, int) { // 3 formants drifting in stereo, with thick
         c.knob[K_SPREAD] = 0.6f; c.ch[K_SPREAD] = 0.45f; c.knob[K_FUND] = 0.4f;
         if (!c.touched[4]) c.PadDown(4, 0.7f);
+    });
+    render("chorus", 4, [](Controls& c, double t, int) { // chorus sweeping into ensemble
+        c.knob[K_SPREAD] = 0.4f; c.alt[K_FUND] = (float)(t / 4); c.knob[K_FUND] = 0.4f;
+        if (!c.touched[5]) c.PadDown(5, 0.7f);
     });
     render("conv", 3, [](Controls& c, double, int) {
         c.SetSwitch(SW_RANGE, RHYTHM); c.SetSwitch(SW_MASK, 1); c.convOn = true; c.alt[K_MASK] = 1;

@@ -184,6 +184,26 @@ c.cc(105, 0); eq(c.compute(new PulsarParams()).motion, 0, 'CC105 = motion');
   assert(moving > 0.1, 'motion: balance moves, sd ' + moving); pass++;
 }
 
+// --- tempo by tapping only; TO + right fader = chorus ---
+c = new PulsarControls(); eq(c.bpm(), 90, 'default tempo 90');
+c.tick(1); tap(c, PC.P_TO);
+assert(c.events.some((e) => e.type === 'tempo' && e.blinks === 1), 'first tap flashes'); pass++;
+c.tick(1.5); tap(c, PC.P_TO); c.tick(2); tap(c, PC.P_TO);
+near(c.bpm(), 120, 0.01, 'taps every 0.5 s = 120 bpm');
+combo(c, PC.P_TO, PC.P_OCT_UP); near(c.bpm(), 125, 0.01, 'P10 + P02 nudges +5');
+c.padDown(PC.P_TO, .7); c.turn(PC.K_FUND, 0.8); c.padUp(PC.P_TO);
+p = c.compute(new PulsarParams()); near(p.chorus, 0.8, 1e-9, 'P10 + right fader = chorus'); near(c.bpm(), 125, 0.01, 'fader no longer changes tempo');
+c.cc(84, 0); eq(c.compute(new PulsarParams()).chorus, 0, 'CC84 = chorus');
+{ // chorus off is bit-exact bypass; on decorrelates L/R
+  const run = (ch) => { const core = new PulsarCore(48000), pp = new PulsarParams(), L = new Float32Array(48), R = new Float32Array(48), out = [];
+    pp.fundHz = 110; pp.formantHz = [440, 0, 0]; pp.gate = 1; pp.chorus = ch; let d = 0, e = 0;
+    for (let b = 0; b < 2000; b++) { core.setParams(pp); core.process(L, R, null, 48); for (let i = 0; i < 48; i++) { out.push(L[i]); d += (L[i] - R[i]) ** 2; e += L[i] ** 2 + R[i] ** 2; } }
+    return { out, side: Math.sqrt(d / e) }; };
+  const dry = run(0), ens = run(0.85);
+  assert(dry.side < 1e-6, 'chorus off: still mono-centred'); pass++;
+  assert(ens.side > 0.2, 'ensemble: wide stereo, got ' + ens.side); pass++;
+}
+
 // --- hold (latch) on short P10+P11, recalibrate on long ---
 c = new PulsarControls(); c.tick(10);
 c.padDown(PC.P_TO, .7); c.padDown(PC.P_CH, .7); c.tick(10.2); c.padUp(PC.P_CH); c.padUp(PC.P_TO);

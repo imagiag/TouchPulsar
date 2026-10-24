@@ -59,7 +59,7 @@ compare('free_sweep', 6, (c, t) => {
 });
 compare('rhythm_burst', 4, (c) => {
   c.setSwitch(PC.SW_RANGE, 2); c.knob[PC.K_MASK] = 0.4; c.knob[PC.K_CLUSTER] = 0.33; c.alt[PC.K_CLUSTER] = 0.8;
-  c.knob[PC.K_SPREAD] = 0.6; c.alt[PC.K_FUND] = 0.4; if (!c.touched[6]) c.padDown(6, 0.8);
+  c.knob[PC.K_SPREAD] = 0.6; c.tempo = 120; if (!c.touched[6]) c.padDown(6, 0.8);
 });
 compare('stoch_fold', 3, (c) => {
   c.setSwitch(PC.SW_MASK, 2); c.knob[PC.K_MASK] = 0.15; c.alt[PC.K_SHAPE] = 1; c.knob[PC.K_SHAPE] = 0.5;
@@ -89,6 +89,10 @@ compare('live_input', 3, (c) => {
 compare('motion', 4, (c) => {
   c.knob[PC.K_SPREAD] = 0.6; c.ch[PC.K_SPREAD] = 0.45; c.knob[PC.K_FUND] = 0.4;
   if (!c.touched[4]) c.padDown(4, 0.7);
+});
+compare('chorus', 4, (c, t) => {
+  c.knob[PC.K_SPREAD] = 0.4; c.alt[PC.K_FUND] = t / 4; c.knob[PC.K_FUND] = 0.4;
+  if (!c.touched[5]) c.padDown(5, 0.7);
 });
 compare('conv', 3, (c) => {
   c.setSwitch(PC.SW_RANGE, 2); c.setSwitch(PC.SW_MASK, 1); c.convOn = true; c.alt[PC.K_MASK] = 1;

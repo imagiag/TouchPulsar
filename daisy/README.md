@@ -24,7 +24,7 @@ Every version is kept in `releases/` with a name saying what changed, so you can
   - **FREE**: the formant note (the fader sets the pulse rate)
   - **RHYTHM**: note values at the current tempo (1/4, 1/8, 1/8T, 1/16, 1/16Q, 1/16T, 1/32)
 - **P10 (TO)** - Tap tempo & Modifier:
-  - **Tap P10** in rhythm to set the tempo (40–240 BPM)
+  - **Tap P10** in rhythm to set the tempo (40–240 BPM); the LED flashes on every tap. Tapping, the nudge below, or MIDI clock are the only ways to set tempo
   - Hold P10 + P00 - Tempo down (−5 BPM)
   - Hold P10 + P02 - Tempo up (+5 BPM)
   - Hold P10 + P03...P09 - Set the **root key** to that pad's current note (the scale type stays)
@@ -52,7 +52,7 @@ Every version is kept in `releases/` with a name saying what changed, so you can
 
 ### Faders
 - S36 (left) **Level** | Output volume (Hold TO: **Drive** — warm saturation) (Hold CH: **Resonance**)
-- S37 (right) **Thick / Fund / Glide**, depending on the Range switch (Hold TO: **Tempo**) (Hold CH: **Cutoff**):
+- S37 (right) **Thick / Fund / Glide**, depending on the Range switch (Hold TO: **Chorus / Ensemble**) (Hold CH: **Cutoff**):
   - TONE: **Thick**. Bottom = a single clean train. Pushing up brings in a slightly detuned second train (3 to 25 cents) that beats against the first and spreads the two left/right. Above 60% a sub-octave sine adds weight.
   - FREE: the pulse rate itself, 0.25 Hz–2 kHz. Slide it slowly from bottom to top to hear rhythm turn into tone.
   - RHYTHM: glide between note values (up to 4 s), for accelerando and ritardando.
@@ -75,6 +75,7 @@ Every version is kept in `releases/` with a name saying what changed, so you can
 - **Convolution**: Each pulse triggers a copy of the sample filtered by the pulsaret, so the sample is replayed in the pulsar rhythm. Try short percussive sounds in RHYTHM and longer ones in FREE. A wooden knock is built in, and a hold on P01 records your own (input jack, up to 2 s).
 - **Live Input**: Turn **Shape fully right** and the audio on the input jack becomes the pulsaret waveform. Each pulse opens a window onto the incoming sound, and every control applies: Window shapes the gate, Formant + Cluster set how long it opens, Mask and the switches chop the pattern, and Fold, Thick, Filter and Drive sit on top. In RHYTHM it's a tempo-synced gate/stutter; in TONE or FREE the fast gating turns into a pitched, ring-mod-like sound played from the pads. A note must be playing (pad, MIDI or Hold) for the input to be heard. Set the level with **P11 + S35**; while P11 is held, the LED lights when the input is loud enough. Careful with a microphone near speakers: it can feed back.
 - **Filter**: Hold P11 and move the faders: right = cutoff, left = resonance. It's a smooth 12 dB/oct low-pass on both channels, placed before Drive so Drive saturates the resonance. At power-up it's fully open (no change to the sound).
+- **Chorus / Ensemble**: Hold P10 and move the right fader. Lower half: a gentle two-voice stereo chorus. Upper half: a third voice fades in for a lush, string-machine ensemble. It sits after Drive, so it widens everything, including Thick, the filter, convolution and live input. Fully down = off.
 - **Thick**: In TONE, the right fader doubles the pulsar train with a detuned copy, like two slightly out-of-tune oscillators: the sound gets wide, chorused and alive, and a sub-octave sine comes in at the top. The copy uses the same formants, shape and masking, so it keeps the pulsar character.
 - **Pressure**: Pressing harder makes a note louder and pushes the formant up (set with Push). Hold keeps the last pressure level.
 - **Soft Takeover**: When you hold P10, or after a MIDI CC changes a value, a knob only takes control once you move it, so values never jump.
@@ -95,7 +96,7 @@ The onboard LED provides visual feedback:
 - **Scale Confirmation**: Blinks $N$ times for scale 1 through 7 (Chromatic = 1 blink, ..., Harmonic Minor = 7 blinks).
 - **Octave Shift**: Quick blinks: 1 at unison, 2 at ±1, 3 at ±2, 4 at ±3 (in Chromatic, one more blink per 7-semitone step).
 - **Root Key**: 1 blink.
-- **Tempo**: 1 blink on P10 + P00/P02.
+- **Tempo**: A short flash on every P10 tap and on P10 + P00/P02.
 - **Hold / Convolution / Formant Mode**: 2 blinks = on (coupled), 1 blink = off (free).
 - **Recording**: Fast flashing while P01 records; 3 blinks when the sample is captured.
 - **Input Level**: While P11 is held, the LED lights when the input signal is above about −26 dB, to help set P11 + S35.
@@ -132,7 +133,7 @@ PulsarTouch appears as a USB MIDI device when connected via the Daisy Seed's USB
 | 81 | **Fold** (TO + S33) |
 | 82 | **Conv** (TO + S35) |
 | 83 | **Drive** (TO + S36) |
-| 84 | **Tempo** (TO + S37) |
+| 84 | **Chorus / Ensemble** (TO + S37) |
 | 85 | S35 **Mask** |
 | 86 | Left switch **Range** (0–42 TONE, 43–85 FREE, 86–127 RHYTHM) |
 | 87 | Right switch **Masking** (0–42 BURST, 43–85 CHANNEL, 86–127 STOCH) |

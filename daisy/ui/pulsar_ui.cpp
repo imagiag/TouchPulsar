@@ -173,7 +173,7 @@ void PulsarUI::handleEvents() {
             }
             case EV_SCALE: blink(e.blinks, 30, 30); break;     // 1..7 quick blinks = scale number
             case EV_OCT:   blink(e.blinks, 25, 25); break;
-            case EV_TEMPO: if (e.blinks) blink(1, 20, 0); break;
+            case EV_TEMPO: blink(1, 30, 0); break;            // tap or nudge: one short flash
             default:       if (e.blinks) blink(e.blinks, 60, 80); break;
         }
     }

@@ -22,6 +22,7 @@ var PS = {
   MAX_KERNEL_SEC: 3,
   RING: 256,          // pulse event ring for UI (LED / pulse strip)
   SHAPE_NAMES: ['sine', 'triangle', 'saw', 'square', 'pulse', 'vela', 'noise', 'input'],
+  CHORUS_BUF: 2048,   // chorus delay line (power of two, > 25 ms at 48 kHz)
   MOTION_RATIO: [1, 1.37, 1.73], // formant motion: per-formant LFO speed ratios
   MOTION_DEPTH: [0.5, 0.6, 0.6],  // and pan depths (main formant drifts less)
   SHAPE_INPUT: 7,     // shape position 7 = live input as the pulsaret waveform (no table)
@@ -56,6 +57,7 @@ function PulsarParams() {
   this.sync = -1;               // beat counter from MIDI clock; -1 = free running
   this.thick = 0;               // 0..1: detuned second train + stereo spread, sub above 0.6
   this.inputGain = 1;           // live input level (shape 7)
+  this.chorus = 0;              // 0..1 chorus (lower half) -> ensemble (upper half)
   this.motion = 0;              // 0..1 formant motion: each formant drifts in stereo (§3.1 spatial paths)
   this.cutoffHz = 18000;        // low-pass filter cutoff (fully open by default)
   this.resonance = 0;           // 0..1
@@ -104,6 +106,8 @@ function PulsarCore(sampleRate) {
   this.subPhase = 0;
   this.trainGain = [1, 0]; this.trainPan = [0, 0];
   this.motPh = [0, 0.33, 0.67]; this.motOff = [0, 0, 0]; // formant motion LFOs
+  this.chBufL = new Float32Array(PS.CHORUS_BUF); this.chBufR = new Float32Array(PS.CHORUS_BUF); // chorus delay lines
+  this.chW = 0; this.chPh = 0;
   this.lastSync = -1;
   this.env = 0;
   this.dcxL = 0; this.dcyL = 0; this.dcxR = 0; this.dcyR = 0;
@@ -317,6 +321,13 @@ PulsarCore.prototype.process = function (outL, outR, inMono, n) {
   var subLvl = th > 0.6 ? (th - 0.6) / 0.4 * 0.5 : 0;
   var subT = shapes; // sine table = shape 0
 
+  // Chorus / ensemble: modulated short delays per channel. Lower half = 2 taps (chorus),
+  // upper half fades in a third, shared tap (ensemble). LFO uses the sine table.
+  var ca = p.chorus, chOn = ca > 0.001;
+  var chRate = (0.2 + 0.8 * ca) / sr, chBase = 0.010 * sr, chDepth = (0.0015 + 0.0035 * ca) * sr;
+  var chK3 = Math.max(0, Math.min(1, (ca - 0.5) * 2)), chDry = 1 - 0.35 * ca, chWet = 0.75 * Math.min(1, ca * 2);
+  var chMask = PS.CHORUS_BUF - 1, bufL = this.chBufL, bufR = this.chBufR;
+
   // Formant motion: per-formant stereo LFOs (0.05 Hz .. 3 Hz), applied to each pulsar at emission
   var mo = p.motion;
   if (mo > 0) {
@@ -422,8 +433,23 @@ PulsarCore.prototype.process = function (outL, outR, inMono, n) {
     this.f1L = 2 * v1 - this.f1L; this.f2L = 2 * v2 - this.f2L; yl = v2;
     v3 = yr - this.f2R; v1 = fa1 * this.f1R + fa2 * v3; v2 = this.f2R + fa2 * this.f1R + fa3 * v3;
     this.f1R = 2 * v1 - this.f1R; this.f2R = 2 * v2 - this.f2R; yr = v2;
-    outL[i] = Math.tanh(yl * drv * 0.6) * drvN * outG;
-    outR[i] = Math.tanh(yr * drv * 0.6) * drvN * outG;
+    var oL = Math.tanh(yl * drv * 0.6) * drvN, oR = Math.tanh(yr * drv * 0.6) * drvN;
+
+    // ---- chorus / ensemble (delay lines always written, so turning it on is seamless) ----
+    var cw = this.chW; bufL[cw] = oL; bufR[cw] = oR; this.chW = (cw + 1) & chMask;
+    if (chOn) {
+      this.chPh += chRate; if (this.chPh >= 1) this.chPh -= 1;
+      var ph0 = this.chPh, ph1 = ph0 + 1 / 3, ph2 = ph0 + 2 / 3;
+      if (ph1 >= 1) ph1 -= 1; if (ph2 >= 1) ph2 -= 1;
+      var tA = this._chTap(bufL, cw, chBase + chDepth * 0.5 * (1 + this._lfo(ph0)), chMask);
+      var tB = this._chTap(bufR, cw, chBase + chDepth * 0.5 * (1 + this._lfo(ph1)), chMask);
+      var dC = chBase + chDepth * 0.5 * (1 + this._lfo(ph2));
+      var wetL = (tA + chK3 * this._chTap(bufL, cw, dC, chMask)) / (1 + chK3);
+      var wetR = (tB + chK3 * this._chTap(bufR, cw, dC, chMask)) / (1 + chK3);
+      oL = oL * chDry + wetL * chWet; oR = oR * chDry + wetR * chWet;
+    }
+    outL[i] = oL * outG;
+    outR[i] = oR * outG;
 
     // ---- sample recording (P01 hold) ----
     if (this.recBuf && inMono) {
@@ -431,6 +457,18 @@ PulsarCore.prototype.process = function (outL, outR, inMono, n) {
     }
   }
   this.clock += n;
+};
+
+// sine LFO from the wavetable (same lookup as the C++ port)
+PulsarCore.prototype._lfo = function (ph) {
+  var x = ph * PS.TABLE, xi = x | 0, t = this.shapes;
+  return t[xi] + (t[xi + 1] - t[xi]) * (x - xi);
+};
+// read a delay line `d` samples behind write position `w` (linear interpolation)
+PulsarCore.prototype._chTap = function (buf, w, d, mask) {
+  var pos = w - d, pi = Math.floor(pos), f = pos - pi;
+  var a = buf[pi & mask], b = buf[(pi + 1) & mask];
+  return a + (b - a) * f;
 };
 
 PulsarCore.prototype.startRecord = function (seconds) {

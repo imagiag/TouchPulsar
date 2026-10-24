@@ -56,6 +56,7 @@ void Core::Init(float sampleRate) {
     ringW_ = 0; pulseCount_ = 0; lastSync_ = -1;
     phaseB_ = 0.0; subPhase_ = 0.0; pulseCountB_ = 0;
     trainGain_[0] = 1.f; trainGain_[1] = 0.f; trainPan_[0] = trainPan_[1] = 0.f;
+    memset(chBufL_, 0, sizeof(chBufL_)); memset(chBufR_, 0, sizeof(chBufR_)); chW_ = 0; chPh_ = 0.0;
     motPh_[0] = 0.f; motPh_[1] = 0.33f; motPh_[2] = 0.67f; motOff_[0] = motOff_[1] = motOff_[2] = 0.f;
     fundLog_ = logf(110.f); fundPhase_ = 0.0; env_ = 0.f;
     dcxL_ = dcyL_ = dcxR_ = dcyR_ = 0.f;
@@ -277,6 +278,14 @@ void Core::Process(float* outL, float* outR, const float* in, size_t n) {
     const double detMul = (double)powf(2.f, (3.f + 22.f * th) / 1200.f);
     const float subLvl = th > 0.6f ? (th - 0.6f) / 0.4f * 0.5f : 0.f;
 
+    // Chorus / ensemble: modulated short delays per channel. Lower half = 2 taps (chorus),
+    // upper half fades in a third, shared tap (ensemble). LFO uses the sine table.
+    const float ca = p.chorus;
+    const bool chOn = ca > 0.001f;
+    const double chRate = (0.2 + 0.8 * (double)ca) / sr_;
+    const float chBase = 0.010f * sr_, chDepth = (0.0015f + 0.0035f * ca) * sr_;
+    const float chK3 = fminf(1.f, fmaxf(0.f, (ca - 0.5f) * 2.f)), chDry = 1.f - 0.35f * ca, chWet = 0.75f * fminf(1.f, ca * 2.f);
+
     // Formant motion: per-formant stereo LFOs (0.05 Hz .. 3 Hz), applied to each pulsar at emission
     static const float kMotRatio[kNForm] = {1.f, 1.37f, 1.73f}, kMotDepth[kNForm] = {0.5f, 0.6f, 0.6f};
     if (p.motion > 0.f) {
@@ -384,14 +393,48 @@ void Core::Process(float* outL, float* outR, const float* in, size_t n) {
             v3 = yr - f2R_; v1 = fa1 * f1R_ + fa2 * v3; v2 = f2R_ + fa2 * f1R_ + fa3 * v3;
             f1R_ = 2.f * v1 - f1R_; f2R_ = 2.f * v2 - f2R_; yr = v2;
         }
-        outL[i] = fast_tanh(yl * drv * 0.6f) * drvN * outG;
-        outR[i] = fast_tanh(yr * drv * 0.6f) * drvN * outG;
+        float oL = fast_tanh(yl * drv * 0.6f) * drvN, oR = fast_tanh(yr * drv * 0.6f) * drvN;
+
+        // ---- chorus / ensemble (delay lines always written, so turning it on is seamless) ----
+        const int cw = chW_;
+        chBufL_[cw] = oL; chBufR_[cw] = oR; chW_ = (cw + 1) & (kChorusBuf - 1);
+        if (chOn) {
+            chPh_ += chRate; if (chPh_ >= 1.0) chPh_ -= 1.0;
+            double ph1 = chPh_ + 1.0 / 3.0, ph2 = chPh_ + 2.0 / 3.0;
+            if (ph1 >= 1.0) ph1 -= 1.0;
+            if (ph2 >= 1.0) ph2 -= 1.0;
+            const float tA = chTap(chBufL_, cw, chBase + chDepth * 0.5f * (1.f + lfo(chPh_)));
+            const float tB = chTap(chBufR_, cw, chBase + chDepth * 0.5f * (1.f + lfo(ph1)));
+            const float dC = chBase + chDepth * 0.5f * (1.f + lfo(ph2));
+            const float wetL = (tA + chK3 * chTap(chBufL_, cw, dC)) / (1.f + chK3);
+            const float wetR = (tB + chK3 * chTap(chBufR_, cw, dC)) / (1.f + chK3);
+            oL = oL * chDry + wetL * chWet; oR = oR * chDry + wetR * chWet;
+        }
+        outL[i] = oL * outG;
+        outR[i] = oR * outG;
 
         // ---- recording (P01 hold) ----
         float* rb = recBuf_;
         if (rb && in && recPos_ < recCap_) { rb[recPos_] = in[i]; recPos_ = recPos_ + 1; }
     }
     inPeak_ = inPeak;
+}
+
+// sine LFO from the wavetable (same lookup as the JS engine)
+float Core::lfo(double ph) const {
+    const double x = ph * kTable;
+    const int xi = (int)x;
+    const float f = (float)(x - xi);
+    return shapes_[xi] + (shapes_[xi + 1] - shapes_[xi]) * f;
+}
+
+// read a delay line `d` samples behind write position `w` (linear interpolation)
+float Core::chTap(const float* buf, int w, float d) {
+    const float pos = (float)w - d;
+    const int pi = (int)floorf(pos);
+    const float f = pos - pi;
+    const float a = buf[pi & (kChorusBuf - 1)], b = buf[(pi + 1) & (kChorusBuf - 1)];
+    return a + (b - a) * f;
 }
 
 size_t Core::RenderPulsaret(const Params& p, float fd, float* out, size_t maxLen) const {

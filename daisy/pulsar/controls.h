@@ -54,7 +54,8 @@ public:
     bool rootFromMidi = false;
     float extBpm = 0.f;
 
-    float Bpm() const { return extBpm > 0.f ? extBpm : 40.f + alt[K_FUND] * 200.f; }
+    float tempo = 90.f;     // BPM: tap P10, P10 + P00/P02, or MIDI clock
+    float Bpm() const { return extBpm > 0.f ? extBpm : tempo; }
     bool ToHeld() const { return touched[P_TO]; }
     bool ChHeld() const { return touched[P_CH]; }
     bool Chromatic() const { return scale == 0; }

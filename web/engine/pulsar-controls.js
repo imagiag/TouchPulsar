@@ -12,7 +12,7 @@ var PC = {
   K_SPREAD: 0, K_FORMANT: 1, K_CLUSTER: 2, K_SHAPE: 3, K_WINDOW: 4, K_MASK: 5, K_LEVEL: 6, K_FUND: 7,
   KNOB_IDS: ['S30', 'S31', 'S32', 'S33', 'S34', 'S35', 'S36', 'S37'],
   KNOB_NAMES: ['spread', 'formant', 'cluster', 'shape', 'window', 'mask', 'level', 'fund'],
-  ALT_NAMES: ['width', 'push', 'edge', 'fold', 'release', 'conv', 'drive', 'tempo'],
+  ALT_NAMES: ['width', 'push', 'edge', 'fold', 'release', 'conv', 'drive', 'chorus'],
   CH_NAMES: ['motion', '', '', '', '', 'in gain', 'res', 'cutoff'], // P11 (CH) layer: formant motion, input gain, filter
   CH_KNOBS: [0, 5, 6, 7],       // controls with a CH-layer function
   // switches
@@ -58,7 +58,8 @@ var PC = {
 
 function PulsarControls() {
   this.knob = [0.15, 0.45, 0.0, 0.0, 0.0, 0.0, 0.7, 0.35];
-  this.alt = [0.6, 0.35, 0.3, 0.0, 0.3, 0.6, 0.15, 0.25];
+  this.alt = [0.6, 0.35, 0.3, 0.0, 0.3, 0.6, 0.15, 0.0]; // [7] chorus/ensemble (off)
+  this.tempo = 90;           // BPM: tap P10, P10 + P00/P02, or MIDI clock
   this.ch = [0, 0, 0, 0, 0, 0.5, 0, 1]; // CH layer: [0] motion (off), [5] input gain (0 dB), [6] resonance, [7] cutoff (open)
   this.sw = [0, 0];
   this.touched = new Uint8Array(12);
@@ -100,7 +101,7 @@ function PulsarControls() {
   this.midiActivity = 0;     // time of last MIDI message (UI blink)
 }
 
-PulsarControls.prototype.bpm = function () { return this.extBpm > 0 ? this.extBpm : 40 + this.alt[PC.K_FUND] * 200; };
+PulsarControls.prototype.bpm = function () { return this.extBpm > 0 ? this.extBpm : this.tempo; };
 PulsarControls.prototype.range = function () { return this.sw[PC.SW_RANGE]; };
 PulsarControls.prototype.toHeld = function () { return !!this.touched[PC.P_TO]; };
 PulsarControls.prototype.chHeld = function () { return !!this.touched[PC.P_CH]; };
@@ -172,8 +173,8 @@ PulsarControls.prototype.padDown = function (i, pressure) {
   if (to) { // ---- TO layer: tempo nudge, root key ----
     this.modUsed[0] = true; this.consumed[i] = 1;
     if (i === PC.P_OCT_DN || i === PC.P_OCT_UP) {
-      var b = Math.max(40, Math.min(240, 40 + this.alt[PC.K_FUND] * 200 + (i === PC.P_OCT_UP ? 5 : -5)));
-      this.alt[PC.K_FUND] = (b - 40) / 200;
+      var b = Math.max(40, Math.min(240, this.tempo + (i === PC.P_OCT_UP ? 5 : -5)));
+      this.tempo = b;
       this._ev('tempo', 'Tempo ' + Math.round(b), 1);
     } else if (i >= 3 && i <= 9) {
       this.setRoot(this.padSemis(i));
@@ -228,10 +229,9 @@ PulsarControls.prototype._tap = function () {
   taps.push(t); if (taps.length > 4) taps.shift();
   if (taps.length >= 2) {
     var b = 60 * (taps.length - 1) / (taps[taps.length - 1] - taps[0]);
-    b = Math.max(40, Math.min(240, b));
-    this.alt[PC.K_FUND] = (b - 40) / 200;
-    this._ev('tempo', 'Tempo ' + Math.round(b), 0);
+    this.tempo = Math.max(40, Math.min(240, b));
   }
+  this._ev('tempo', 'Tempo ' + Math.round(this.tempo), 1); // short LED flash on every tap
 };
 
 // ---- MIDI (omni; hosts pass raw bytes, timestamps in seconds) ----
@@ -411,6 +411,7 @@ PulsarControls.prototype.compute = function (out) {
   out.resonance = this.ch[PC.K_LEVEL];
   out.inputGain = pcExp(this.ch[PC.K_MASK], 0.25, 4); // -12..+12 dB, centre = 0 dB
   out.motion = this.ch[PC.K_SPREAD];
+  out.chorus = A[PC.K_FUND];
   return out;
 };
 

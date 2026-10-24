@@ -20,7 +20,8 @@ constexpr int kNForm = 3;      // formants sharing one fundamental
 constexpr int kNVoice = 8;     // overlapping pulsarets per formant per train
 constexpr int kNTrain = 2;     // train 0 = main, train 1 = detuned 'thick' copy
 constexpr int kNConv = 12;     // overlapping convolution-kernel voices
-constexpr int kRing = 256;     // pulse event ring for the UI (LED)
+constexpr int kRing = 256;
+constexpr int kChorusBuf = 2048; // chorus delay line (power of two, > 25 ms at 48 kHz)     // pulse event ring for the UI (LED)
 
 enum Route : uint8_t { R_MUTE = 0, R_BOTH = 1, R_LEFT = 2, R_RIGHT = 3 };
 enum MaskMode : int { M_OFF = 0, M_BURST = 1, M_CHANNEL = 2, M_STOCH = 3 };
@@ -49,6 +50,7 @@ struct Params {
     int32_t sync = -1;           // beat counter from MIDI clock; -1 = free running
     float thick = 0.f;           // 0..1: detuned second train + stereo spread, sub above 0.6
     float inputGain = 1.f;       // live input level (shape 7)
+    float chorus = 0.f;          // 0..1 chorus (lower half) -> ensemble (upper half)
     float motion = 0.f;          // 0..1 formant motion: each formant drifts in stereo (§3.1 spatial paths)
     float cutoffHz = 18000.f;    // low-pass filter cutoff (fully open by default)
     float resonance = 0.f;       // 0..1
@@ -130,6 +132,11 @@ private:
     uint32_t pulseCountB_ = 0;
     float trainGain_[kNTrain] = {1.f, 0.f}, trainPan_[kNTrain] = {0.f, 0.f};
     float motPh_[kNForm] = {0.f, 0.33f, 0.67f}, motOff_[kNForm] = {0.f, 0.f, 0.f}; // formant motion LFOs
+    float chBufL_[kChorusBuf], chBufR_[kChorusBuf]; // chorus delay lines
+    int chW_ = 0;
+    double chPh_ = 0.0;
+    float lfo(double ph) const;
+    static float chTap(const float* buf, int w, float d);
     int32_t lastSync_ = -1;
     float env_ = 0.f;
     float dcxL_ = 0.f, dcyL_ = 0.f, dcxR_ = 0.f, dcyR_ = 0.f;

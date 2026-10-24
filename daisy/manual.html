@@ -121,7 +121,7 @@
     </ul></td></tr>
   <tr><td class="id">P10 (TO)</td><td>Tap tempo &amp; Modifier:
     <ul>
-      <li><b>Tap P10</b> in rhythm to set the tempo (40–240 BPM)</li>
+      <li><b>Tap P10</b> in rhythm to set the tempo (40–240 BPM); the LED flashes on every tap. Tapping, the nudge below, or MIDI clock are the only ways to set tempo</li>
       <li>Hold P10 + P00: Tempo down (−5 BPM)</li>
       <li>Hold P10 + P02: Tempo up (+5 BPM)</li>
       <li>Hold P10 + P03…P09: set the <b>root key</b> to that pad's current note (the scale type stays)</li>
@@ -165,7 +165,7 @@
       <li>TONE: <b>Thick</b>. Bottom = a single clean train. Pushing up brings in a slightly detuned second train (3 to 25 cents) that beats against the first and spreads the two left/right. Above 60% a sub-octave sine adds weight</li>
       <li>FREE: the pulse rate itself, 0.25&nbsp;Hz–2&nbsp;kHz. Slide it slowly from bottom to top to hear rhythm turn into tone</li>
       <li>RHYTHM: glide between note values (up to 4&nbsp;s), for accelerando and ritardando</li>
-    </ul></td><td><span class="to">Tempo</span></td><td><b style="color:#8b5fd6">Cutoff</b>: 30&nbsp;Hz–18&nbsp;kHz, fully up = open</td></tr>
+    </ul></td><td><span class="to">Chorus / Ensemble</span>: lower half chorus, upper half ensemble</td><td><b style="color:#8b5fd6">Cutoff</b>: 30&nbsp;Hz–18&nbsp;kHz, fully up = open</td></tr>
 </table>
 
 <h3 id="switches">Switches</h3>
@@ -196,6 +196,7 @@
   <li><b>Convolution</b>: Each pulse triggers a copy of the sample filtered by the pulsaret, so the sample is replayed in the pulsar rhythm. Try short percussive sounds in RHYTHM and longer ones in FREE. A wooden knock is built in, and a hold on P01 records your own (input jack, up to 2&nbsp;s).</li>
   <li><b>Live Input</b>: Turn <b>Shape fully right</b> and the audio on the input jack becomes the pulsaret waveform. Each pulse opens a window onto the incoming sound, and every control applies: Window shapes the gate, Formant + Cluster set how long it opens, Mask and the switches chop the pattern, and Fold, Thick, Filter and Drive sit on top. In RHYTHM it's a tempo-synced gate/stutter; in TONE or FREE the fast gating turns into a pitched, ring-mod-like sound played from the pads. A note must be playing (pad, MIDI or Hold) for the input to be heard. Set the level with <b>P11 + S35</b>; while P11 is held, the LED lights when the input is loud enough. Careful with a microphone near speakers: it can feed back.</li>
   <li><b>Filter</b>: Hold P11 and move the faders: right = cutoff, left = resonance. It's a smooth 12&nbsp;dB/oct low-pass on both channels, placed before Drive so Drive saturates the resonance. At power-up it's fully open (no change to the sound).</li>
+  <li><b>Chorus / Ensemble</b>: Hold P10 and move the right fader. Lower half: a gentle two-voice stereo chorus. Upper half: a third voice fades in for a lush, string-machine ensemble. It sits after Drive, so it widens everything, including Thick, the filter, convolution and live input. Fully down = off.</li>
   <li><b>Thick</b>: In TONE, the right fader doubles the pulsar train with a detuned copy, like two slightly out-of-tune oscillators: the sound gets wide, chorused and alive, and a sub-octave sine comes in at the top. The copy uses the same formants, shape and masking, so it keeps the pulsar character.</li>
   <li><b>Pressure</b>: Pressing harder makes a note louder and pushes the formant up (set with Push). Hold keeps the last pressure level.</li>
   <li><b>Soft Takeover</b>: When you hold P10, or after a MIDI CC changes a value, a knob only takes control once you move it, so values never jump.</li>
@@ -221,7 +222,7 @@
   <li><b>Scale Confirmation</b>: Blinks N times for scale 1 through 7 (Chromatic = 1 blink, …, Harmonic Minor = 7 blinks).</li>
   <li><b>Octave Shift</b>: Quick blinks: 1 at unison, 2 at ±1, 3 at ±2, 4 at ±3 (in Chromatic, one more blink per 7-semitone step).</li>
   <li><b>Root Key</b>: 1 blink.</li>
-  <li><b>Tempo</b>: 1 blink on P10 + P00/P02.</li>
+  <li><b>Tempo</b>: A short flash on every P10 tap and on P10 + P00/P02.</li>
   <li><b>Hold / Convolution / Formant Mode</b>: 2 blinks = on (coupled), 1 blink = off (free).</li>
   <li><b>Recording</b>: Fast flashing while P01 records; 3 blinks when the sample is captured.</li>
   <li><b>Input Level</b>: While P11 is held, the LED lights when the input signal is above about −26&nbsp;dB, to help set P11 + S35.</li>
@@ -253,7 +254,7 @@
   <tr><td class="id">64</td><td><b>Sustain</b></td><td class="id">81</td><td><span class="to">Fold</span> (TO + S33)</td></tr>
   <tr><td class="id">71</td><td>S32 <b>Cluster</b></td><td class="id">82</td><td><span class="to">Conv</span> (TO + S35)</td></tr>
   <tr><td class="id">72</td><td><span class="to">Release</span> (TO + S34)</td><td class="id">83</td><td><span class="to">Drive</span> (TO + S36)</td></tr>
-  <tr><td class="id">74</td><td>S31 <b>Formant</b></td><td class="id">84</td><td><span class="to">Tempo</span> (TO + S37)</td></tr>
+  <tr><td class="id">74</td><td>S31 <b>Formant</b></td><td class="id">84</td><td><span class="to">Chorus / Ensemble</span> (TO + S37)</td></tr>
   <tr><td class="id">75</td><td>S33 <b>Shape</b></td><td class="id">85</td><td>S35 <b>Mask</b></td></tr>
   <tr><td class="id">76</td><td>S34 <b>Window</b></td><td class="id">86</td><td>Left switch <b>Range</b> (0–42 TONE, 43–85 FREE, 86–127 RHYTHM)</td></tr>
   <tr><td class="id">77</td><td>S30 <b>Spread</b></td><td class="id">87</td><td>Right switch <b>Masking</b> (0–42 BURST, 43–85 CHANNEL, 86–127 STOCH)</td></tr>

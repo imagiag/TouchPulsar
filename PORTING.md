@@ -97,7 +97,7 @@ Plan for when the Touch version moves into a module (noted 2026-10-24; not start
 ### Feedback from playing the hardware
 - ~~**Right fader (S37) in TONE**: glide is rarely useful musically.~~ **Done (v2):** S37 in TONE is now **Thick**: a detuned second train (3–25 cents) spread L/R, plus a sub-octave sine above 60%. Glide in TONE is now a fixed 60 ms, on MIDI legato only.
 - **Done (v3): Filter**: P11 + right fader = low-pass cutoff, P11 + left fader = resonance (TPT state-variable filter, 12 dB/oct, before Drive; CC 102/103).
-- **Chorus / ensemble** (option on top of Thick): 2–3 modulated short delays in stereo (~30 ms buffer), for an even lusher sound that also works on the convolved sound. Not built yet. (Noted 2026-10-24.)
+- **Done (v6): Chorus / ensemble** on P10 + right fader (CC 84): 2 modulated taps per channel (chorus) fading into 3 (ensemble), after Drive. Tempo moved off that fader: tap P10 / P10 + P00/P02 / MIDI clock only, with an LED flash on every tap.
 - **Silent recording feedback**: recording with nothing on the input still blinks 3× (the old sample stays). Give silence its own blink pattern (e.g. 1 long blink) so it's clear nothing was captured. (Noted 2026-10-24.)
 - **Done (v4): Live input, step 1**: Shape fully right = the input jack as the pulsaret waveform (all pulsar controls apply); P11 + S35 = input gain (CC 104); LED input meter while P11 is held.
 - **Live input, step 2 — pulsar echo**: live convolution of the input with the pulse train = a multi-tap delay with one tap per recent pulse (2 s SDRAM ring buffer, ~12 taps), so masking shapes the echo pattern. P01 tap would cycle off → sample conv → live echo. Not built yet.

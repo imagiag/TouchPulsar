@@ -34,7 +34,7 @@ static inline float clampf(float v, float a, float b) { return v < a ? a : (v > 
 
 Controls::Controls() {
     static const float k[K_COUNT] = {0.15f, 0.45f, 0.f, 0.f, 0.f, 0.f, 0.7f, 0.35f};
-    static const float a[K_COUNT] = {0.6f, 0.35f, 0.3f, 0.f, 0.3f, 0.6f, 0.15f, 0.25f};
+    static const float a[K_COUNT] = {0.6f, 0.35f, 0.3f, 0.f, 0.3f, 0.6f, 0.15f, 0.f}; // [7] chorus (off)
     for (int i = 0; i < K_COUNT; i++) { knob[i] = k[i]; alt[i] = a[i]; ch[i] = 0.f; }
     ch[K_FUND] = 1.f;   // filter fully open
     ch[K_MASK] = 0.5f;  // input gain 0 dB
@@ -118,8 +118,7 @@ void Controls::PadDown(int i, float pr) {
     if (to) { // TO layer: tempo nudge, root key
         modUsed[0] = true; consumed_[i] = 1;
         if (i == P_OCT_DN || i == P_OCT_UP) {
-            const float b = clampf(40.f + alt[K_FUND] * 200.f + (i == P_OCT_UP ? 5.f : -5.f), 40.f, 240.f);
-            alt[K_FUND] = (b - 40.f) / 200.f;
+            tempo = clampf(tempo + (i == P_OCT_UP ? 5.f : -5.f), 40.f, 240.f);
             ev(EV_TEMPO, 1);
         } else if (i >= 3 && i <= 9) setRoot(PadSemis(i));
         return;
@@ -156,11 +155,8 @@ void Controls::tap() {
     if (tapN_ && t - taps_[tapN_ - 1] > 2.0) tapN_ = 0;
     if (tapN_ == 4) { for (int i = 1; i < 4; i++) taps_[i - 1] = taps_[i]; tapN_--; }
     taps_[tapN_++] = t;
-    if (tapN_ >= 2) {
-        const float b = clampf((float)(60.0 * (tapN_ - 1) / (taps_[tapN_ - 1] - taps_[0])), 40.f, 240.f);
-        alt[K_FUND] = (b - 40.f) / 200.f;
-        ev(EV_TEMPO, 0);
-    }
+    if (tapN_ >= 2) tempo = clampf((float)(60.0 * (tapN_ - 1) / (taps_[tapN_ - 1] - taps_[0])), 40.f, 240.f);
+    ev(EV_TEMPO, 1); // short LED flash on every tap
 }
 
 // ---- MIDI (omni) ----
@@ -337,6 +333,7 @@ void Controls::Compute(Params& out) const {
     out.resonance = ch[K_LEVEL];
     out.inputGain = pcExp(ch[K_MASK], 0.25f, 4.f); // -12..+12 dB, centre = 0 dB
     out.motion = ch[K_SPREAD];
+    out.chorus = alt[K_FUND];
 }
 
 } // namespace pulsar

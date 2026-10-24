@@ -5,6 +5,7 @@ Flash these with https://flash.daisy.audio/ (BOOT + RESET, or hold BOOT while pl
 
 | File | Date | Changes |
 |---|---|---|
+| `PulsarTouch-v6-chorus.bin` | 2026-10-24 | **Chorus / Ensemble** on P10 + right fader (CC 84). Tempo is set only by tapping P10 (LED flashes per tap), P10 + P00/P02, or MIDI clock. |
 | `PulsarTouch-v5-motion.bin` | 2026-10-24 | **Formant motion**: P11 + S30 sets the formants drifting around the stereo field (CC 105). Width unchanged. |
 | `PulsarTouch-v4-live-input.bin` | 2026-10-24 | **Live input**: Shape fully right = the input jack becomes the pulsaret waveform (rhythmic gate in RHYTHM, ring-mod-like tones in TONE/FREE). P11 + S35 = input gain (CC 104); LED shows input level while P11 is held. |
 | `PulsarTouch-v3-filter.bin` | 2026-10-24 | **Filter**: P11 + right fader = low-pass cutoff, P11 + left fader = resonance (CC 102/103). Fully open at power-up. |

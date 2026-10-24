@@ -49,13 +49,13 @@ The engine has one pulsar generator with three formants, all sharing one f<sub>p
 | S34 | **Window**: gauss · FOF · expodec · lindec · rect · linatt · expatt | **Release** |
 | S35 | **Mask**: burst ratio b:r, or probability · hold **P11**: **input gain** | **Conv**: convolution mix |
 | S36 fader | **Level** · hold **P11**: filter **resonance** | **Drive** |
-| S37 fader | hold **P11**: filter **cutoff** · TONE: **thick** (detuned second train + stereo width, sub-octave above 60%) · FREE: **fundamental** 0.25 Hz–2 kHz · RHYTHM: **glide** | **Tempo** |
+| S37 fader | hold **P11**: filter **cutoff** · TONE: **thick** (detuned second train + stereo width, sub-octave above 60%) · FREE: **fundamental** 0.25 Hz–2 kHz · RHYTHM: **glide** | **Chorus → ensemble** |
 | S09/10 switch | **TONE**: pads are scale notes · **FREE**: the fader sets f<sub>p</sub> and the pads play the formant · **RHYTHM**: pads are note values (1/4 … 1/32) at the current tempo, taken from the paper's pulsar graph (Fig. 5); glide here gives accelerando and ritardando | |
 | S07/08 switch | **BURST** · **CHANNEL** (bursts left, rests right) · **STOCH** | |
 | P03–P09 | notes / note values; pressure sets amplitude and pushes the formant | |
 | P00 / P02 | octave − / + (Chromatic: ±7 semitones, so no notes are skipped) | tempo − / + |
 | P01 | tap: convolution on/off · hold: record 2 s of input as the sample | |
-| P10 | tap tempo; hold for the second knob layer | |
+| P10 | tap tempo (LED flashes per tap); hold for the second knob layer | |
 | P11 | hold + P03–P09: pick scale · + P00/P02: cycle scale · + P01: formant coupled/free | |
 | P10 + P03–P09 | | set the **root key** to that pad's current note (the scale type is kept) |
 | P10 + P11 | quick tap: hold (latch) · hold 1.5 s: recalibrate pads (hardware) | |
@@ -104,7 +104,7 @@ MIDI notes play **fully chromatic**; the scale only affects the pads. Pads and M
 | 76 | window (S34) | 72 | release |
 | 85 | mask (S35) | 82 | conv mix |
 | 7 | level (S36) | 83 | drive |
-| 5 | thick / fund / glide (S37) | 84 | tempo |
+| 5 | thick / fund / glide (S37) | 84 | chorus / ensemble |
 
 Other CCs: 86 range switch (0–42 TONE, 43–85 FREE, 86–127 RHYTHM) · 87 mask switch · 88 bend range · 89 root from MIDI (≥64 = on: the root follows the lowest held note; off by default) · 102 filter cutoff · 103 filter resonance · 104 input gain · 105 formant motion · 120/123 all notes off.
 

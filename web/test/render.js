@@ -52,7 +52,7 @@ run('free_sweep', 6, (c, t) => {
 // 3. RHYTHM + burst masking, 3 formants, cluster 3, overlap
 run('rhythm_burst', 4, (c, t) => {
   c.sw = [2, 0]; c.knob[PC.K_MASK] = 0.4; c.knob[PC.K_CLUSTER] = 0.33; c.alt[PC.K_CLUSTER] = 0.8;
-  c.knob[PC.K_SPREAD] = 0.6; c.alt[PC.K_FUND] = 0.4; if (!c.touched[6]) c.padDown(6, 0.8);
+  c.knob[PC.K_SPREAD] = 0.6; c.tempo = 120; if (!c.touched[6]) c.padDown(6, 0.8);
 });
 // 4. Stochastic masking at audio rate, max fold, square shape
 run('stoch_fold', 3, (c, t) => {

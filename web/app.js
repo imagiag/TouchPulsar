@@ -458,7 +458,7 @@ function knobText(i, alt) {
     case 4: return p.releaseSec.toFixed(2) + ' s';
     case 5: return Math.round(ctl.alt[5] * 100) + '%';
     case 6: return Math.round(p.drive * 100) + '%';
-    case 7: return Math.round(ctl.bpm()) + ' bpm';
+    case 7: return p.chorus < 0.005 ? 'off' : (p.chorus <= 0.5 ? 'chorus ' : 'ensemble ') + Math.round(p.chorus * 100) + '%';
   }
   switch (i) {
     case 0: return ctl.knob[0] < 0.01 ? '1 formant' : Math.round(ctl.knob[0] * 100) + '%';
@@ -513,7 +513,7 @@ function updateBoard() {
     if (e._sub.textContent !== sub) e._sub.textContent = sub;
   });
   $('layerHint').innerHTML = ctl.chHeld() ? '<b style="color:#b48cf0">CH layer</b>: faders = filter cutoff (right) · resonance (left) · P03–P09 pick scale · P00/P02 cycle · P01 formant coupling'
-    : alt ? '<b style="color:var(--alt)">TO layer</b>: knobs edit width · push · edge · fold · release · conv · drive · tempo · P03–P09 set root · P00/P02 tempo'
+    : alt ? '<b style="color:var(--alt)">TO layer</b>: knobs edit width · push · edge · fold · release · conv · drive · chorus · P03–P09 set root · P00/P02 tempo'
     : 'Hold <b>P10 / Shift</b> for the second knob layer · hold <b>P11 / W</b> for scales · <b>Space</b> = hold';
 }
 
@@ -575,12 +575,13 @@ const PRESETS = [
   { name: 'Ondioline', sw: [0, 0], knob: [0, .35, 0, 0, v(4, 6), 0, .7, 0], pad: 5 },
   { name: 'Formant voice', sw: [0, 0], knob: [.55, .5, .12, 0, v(1, 6), 0, .7, .3], alt: { 1: .5 }, pad: 4 },
   { name: 'Fig. 9 · 2:1 subharmonics', sw: [1, 0], coupled: false, knob: [0, 3 / 7, 0, 0, v(4, 6), 7 / 20, .7, Math.log2(400) / 13], pad: 3 },
-  { name: 'Blip rhythm', sw: [2, 0], knob: [.3, .55, .2, v(4, 7), v(2, 6), .25, .75, 0], alt: { 4: .35, 7: .4 }, pad: 6 },
-  { name: 'Channel dialog', sw: [2, 1], knob: [.25, .45, .5, v(1, 7), v(1, 6), 0, .75, 0], alt: { 4: .4, 7: .4 }, pad: 7 },
+  { name: 'Blip rhythm', sw: [2, 0], knob: [.3, .55, .2, v(4, 7), v(2, 6), .25, .75, 0], alt: { 4: .35 }, tempo: 120, pad: 6 },
+  { name: 'Channel dialog', sw: [2, 1], knob: [.25, .45, .5, v(1, 7), v(1, 6), 0, .75, 0], alt: { 4: .4 }, tempo: 120, pad: 7 },
   { name: 'Pulse cloud', sw: [1, 2], coupled: false, knob: [.8, .5, .5, v(5, 7), 0, .3, .7, Math.log2(36) / 13], alt: { 0: 1, 2: .8 }, pad: 5 },
   { name: 'CP 1919 (first pulsar)', sw: [1, 0], coupled: false, knob: [.3, .45, .5, v(5, 7), v(1, 6), 0, .8, Math.log2(0.748 / 0.25) / 13], alt: { 4: .6 }, pad: 3 },
+  { name: 'Ensemble strings', sw: [0, 0], knob: [.4, .3, .3, v(1, 7), 0, 0, .7, .5], alt: { 7: .85 }, pad: 5 },
   { name: 'Thick unison + sub', sw: [0, 0], knob: [.35, .4, .15, v(1, 7), v(1, 6), 0, .7, .75], pad: 3 },
-  { name: 'Live input gate (enable input)', sw: [2, 0], coupled: false, knob: [0, .1, 1, 1, 0, .25, .8, 0], alt: { 7: .25 }, pad: 6 },
+  { name: 'Live input gate (enable input)', sw: [2, 0], coupled: false, knob: [0, .1, 1, 1, 0, .25, .8, 0], tempo: 90, pad: 6 },
   { name: 'Analog intermittency', sw: [0, 2], knob: [0, .25, 0, v(3, 7), v(3, 6), .15, .7, 0], pad: 3 },
 ];
 PRESETS.forEach((p, i) => { el('option', '', $('preset'), p.name).value = i; });
@@ -589,7 +590,7 @@ $('preset').addEventListener('change', (e) => {
   const p = PRESETS[e.target.value]; if (!p) return;
   const d = new PulsarControls();
   ctl.knob = p.knob.slice(); ctl.alt = d.alt.slice(); Object.entries(p.alt || {}).forEach(([k, val]) => (ctl.alt[k] = val));
-  ctl.sw = p.sw.slice(); ctl.coupled = p.coupled !== false; ctl.oct = 0;
+  ctl.sw = p.sw.slice(); ctl.coupled = p.coupled !== false; ctl.oct = 0; ctl.tempo = p.tempo || 90;
   ctl.latch = true; ctl.latchedKey = p.pad; ctl.lastKey = p.pad;
   ensureAudio(); toast(p.name + ' · HOLD on (Space to release)');
   e.target.blur();
@@ -606,7 +607,7 @@ $('helpBody').innerHTML = `
 <tr><td>S34</td><td>Window — gauss · FOF · expodec · lindec · rect · linatt · expatt</td><td>Release</td></tr>
 <tr><td>S35</td><td>Mask — burst ratio b:r or probability</td><td>Conv — convolution mix · <i>hold P11: input gain</i></td></tr>
 <tr><td>S36 (L fader)</td><td>Level</td><td>Drive · <i>hold P11: filter resonance</i></td></tr>
-<tr><td>S37 (R fader)</td><td>TONE: thick (detuned 2nd train + width, sub above 60%) · FREE: fundamental 0.25 Hz–2 kHz · RHYTHM: glide</td><td>Tempo · <i>hold P11: filter cutoff</i></td></tr>
+<tr><td>S37 (R fader)</td><td>TONE: thick (detuned 2nd train + width, sub above 60%) · FREE: fundamental 0.25 Hz–2 kHz · RHYTHM: glide</td><td>Chorus → ensemble · <i>hold P11: filter cutoff</i></td></tr>
 <tr><td>S09/10 switch</td><td colspan="2">TONE (pads = notes) · FREE (fader = f<sub>p</sub>, pads = formant notes) · RHYTHM (pads = note values at tempo)</td></tr>
 <tr><td>S07/08 switch</td><td colspan="2">BURST · CHANNEL (bursts left, rests right) · STOCHASTIC</td></tr>
 <tr><td>P03–P09</td><td colspan="2">Notes / subdivisions; position on pad (or Pencil force) = pressure</td></tr>
