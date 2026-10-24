@@ -13,8 +13,8 @@ var PC = {
   KNOB_IDS: ['S30', 'S31', 'S32', 'S33', 'S34', 'S35', 'S36', 'S37'],
   KNOB_NAMES: ['spread', 'formant', 'cluster', 'shape', 'window', 'mask', 'level', 'fund'],
   ALT_NAMES: ['width', 'push', 'edge', 'fold', 'release', 'conv', 'drive', 'tempo'],
-  CH_NAMES: ['', '', '', '', '', 'in gain', 'res', 'cutoff'], // P11 (CH) layer: input gain, low-pass filter
-  CH_KNOBS: [5, 6, 7],       // controls with a CH-layer function
+  CH_NAMES: ['motion', '', '', '', '', 'in gain', 'res', 'cutoff'], // P11 (CH) layer: formant motion, input gain, filter
+  CH_KNOBS: [0, 5, 6, 7],       // controls with a CH-layer function
   // switches
   SW_RANGE: 0,  // S09/S10 (left):  up TONE · center FREE · down RHYTHM
   SW_MASK: 1,   // S07/S08 (right): up BURST · center CHANNEL · down STOCH
@@ -51,7 +51,7 @@ var PC = {
     [77, 'k', 0], [74, 'k', 1], [71, 'k', 2], [75, 'k', 3], [76, 'k', 4], [85, 'k', 5], [7, 'k', 6], [5, 'k', 7],
     [78, 'a', 0], [79, 'a', 1], [80, 'a', 2], [81, 'a', 3], [72, 'a', 4], [82, 'a', 5], [83, 'a', 6], [84, 'a', 7],
   ],
-  CC_CUTOFF: 102, CC_RES: 103, CC_IN_GAIN: 104,
+  CC_CUTOFF: 102, CC_RES: 103, CC_IN_GAIN: 104, CC_MOTION: 105,
   CC_MOD: 1, CC_SUSTAIN: 64, CC_RANGE: 86, CC_MASKMODE: 87, CC_BEND_RANGE: 88, CC_ROOT_FROM_MIDI: 89,
   CC_ALL_OFF: 123,
 };
@@ -59,7 +59,7 @@ var PC = {
 function PulsarControls() {
   this.knob = [0.15, 0.45, 0.0, 0.0, 0.0, 0.0, 0.7, 0.35];
   this.alt = [0.6, 0.35, 0.3, 0.0, 0.3, 0.6, 0.15, 0.25];
-  this.ch = [0, 0, 0, 0, 0, 0.5, 0, 1]; // CH layer: [5] input gain (0 dB), [6] resonance, [7] cutoff (open)
+  this.ch = [0, 0, 0, 0, 0, 0.5, 0, 1]; // CH layer: [0] motion (off), [5] input gain (0 dB), [6] resonance, [7] cutoff (open)
   this.sw = [0, 0];
   this.touched = new Uint8Array(12);
   this.pressure = new Float32Array(12);
@@ -277,7 +277,8 @@ PulsarControls.prototype.cc = function (c, v) {
   for (var i = 0; i < m.length; i++) {
     if (m[i][0] === c) { (m[i][1] === 'k' ? this.knob : this.alt)[m[i][2]] = x; return; }
   }
-  if (c === PC.CC_IN_GAIN) this.ch[PC.K_MASK] = x;
+  if (c === PC.CC_MOTION) this.ch[PC.K_SPREAD] = x;
+  else if (c === PC.CC_IN_GAIN) this.ch[PC.K_MASK] = x;
   else if (c === PC.CC_CUTOFF) this.ch[PC.K_FUND] = x;
   else if (c === PC.CC_RES) this.ch[PC.K_LEVEL] = x;
   else if (c === PC.CC_MOD) this.mod = x;
@@ -409,6 +410,7 @@ PulsarControls.prototype.compute = function (out) {
   out.cutoffHz = pcExp(this.ch[PC.K_FUND], 30, 18000);
   out.resonance = this.ch[PC.K_LEVEL];
   out.inputGain = pcExp(this.ch[PC.K_MASK], 0.25, 4); // -12..+12 dB, centre = 0 dB
+  out.motion = this.ch[PC.K_SPREAD];
   return out;
 };
 

@@ -163,6 +163,27 @@ c.cc(104, 0); near(c.compute(new PulsarParams()).inputGain, 0.25, 1e-9, 'CC104 =
   near(live.peak, 0.5, 0.01, 'input meter reads the level');
 }
 
+// --- formant motion on P11 + S30 (Width untouched) ---
+c = new PulsarControls(); eq(c.compute(new PulsarParams()).motion, 0, 'motion off by default');
+const w0 = c.alt[PC.K_SPREAD], s0 = c.knob[PC.K_SPREAD];
+c.padDown(PC.P_CH, .7); c.turn(PC.K_SPREAD, 0.7); c.padUp(PC.P_CH);
+near(c.compute(new PulsarParams()).motion, 0.7, 1e-9, 'P11 + S30 = motion');
+eq(c.alt[PC.K_SPREAD], w0, 'width untouched'); eq(c.knob[PC.K_SPREAD], s0, 'spread untouched');
+c.cc(105, 0); eq(c.compute(new PulsarParams()).motion, 0, 'CC105 = motion');
+{ // stereo balance moves over time with motion, stays put without
+  const bal = (mo) => { const core = new PulsarCore(48000), pp = new PulsarParams(), L = new Float32Array(48), R = new Float32Array(48);
+    pp.fundHz = 110; pp.formantHz = [440, 1100, 2400]; pp.formantAmp = [1, .7, .5]; pp.formantPan = [0, -.6, .6]; pp.gate = 1; pp.motion = mo;
+    const out = []; let l = 0, r = 0;
+    for (let b = 0; b < 4000; b++) { core.setParams(pp); core.process(L, R, null, 48);
+      for (let i = 0; i < 48; i++) { l += L[i] * L[i]; r += R[i] * R[i]; }
+      if (b % 100 === 99) { out.push((l - r) / (l + r)); l = r = 0; } }
+    const m = out.reduce((a, x) => a + x, 0) / out.length;
+    return Math.sqrt(out.reduce((a, x) => a + (x - m) ** 2, 0) / out.length); };
+  const still = bal(0), moving = bal(0.4);
+  assert(still < 0.01, 'no motion: balance steady, sd ' + still); pass++;
+  assert(moving > 0.1, 'motion: balance moves, sd ' + moving); pass++;
+}
+
 // --- hold (latch) on short P10+P11, recalibrate on long ---
 c = new PulsarControls(); c.tick(10);
 c.padDown(PC.P_TO, .7); c.padDown(PC.P_CH, .7); c.tick(10.2); c.padUp(PC.P_CH); c.padUp(PC.P_TO);

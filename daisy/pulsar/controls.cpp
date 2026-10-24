@@ -25,7 +25,7 @@ static const int kCcMap[16][3] = {
     {77, 0, 0}, {74, 0, 1}, {71, 0, 2}, {75, 0, 3}, {76, 0, 4}, {85, 0, 5}, {7, 0, 6}, {5, 0, 7},
     {78, 1, 0}, {79, 1, 1}, {80, 1, 2}, {81, 1, 3}, {72, 1, 4}, {82, 1, 5}, {83, 1, 6}, {84, 1, 7},
 };
-enum { CC_CUTOFF = 102, CC_RES = 103, CC_IN_GAIN = 104, CC_MOD = 1, CC_SUSTAIN = 64, CC_RANGE = 86, CC_MASKMODE = 87, CC_BEND_RANGE = 88, CC_ROOT_FROM_MIDI = 89 };
+enum { CC_CUTOFF = 102, CC_RES = 103, CC_IN_GAIN = 104, CC_MOTION = 105, CC_MOD = 1, CC_SUSTAIN = 64, CC_RANGE = 86, CC_MASKMODE = 87, CC_BEND_RANGE = 88, CC_ROOT_FROM_MIDI = 89 };
 static constexpr float kLegatoGlideSec = 0.06f;
 static constexpr double kHoldSec = 0.4, kLatchMaxSec = 1.0, kRecalSec = 1.5;
 
@@ -210,7 +210,8 @@ void Controls::cc(int c, int v) {
     const float x = v / 127.f;
     for (int i = 0; i < 16; i++)
         if (kCcMap[i][0] == c) { (kCcMap[i][1] ? alt : knob)[kCcMap[i][2]] = x; return; }
-    if (c == CC_IN_GAIN) ch[K_MASK] = x;
+    if (c == CC_MOTION) ch[K_SPREAD] = x;
+    else if (c == CC_IN_GAIN) ch[K_MASK] = x;
     else if (c == CC_CUTOFF) ch[K_FUND] = x;
     else if (c == CC_RES) ch[K_LEVEL] = x;
     else if (c == CC_MOD) mod_ = x;
@@ -335,6 +336,7 @@ void Controls::Compute(Params& out) const {
     out.cutoffHz = pcExp(ch[K_FUND], 30.f, 18000.f);
     out.resonance = ch[K_LEVEL];
     out.inputGain = pcExp(ch[K_MASK], 0.25f, 4.f); // -12..+12 dB, centre = 0 dB
+    out.motion = ch[K_SPREAD];
 }
 
 } // namespace pulsar

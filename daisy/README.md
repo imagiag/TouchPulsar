@@ -36,13 +36,14 @@ Every version is kept in `releases/` with a name saying what changed, so you can
   - P11 + P01 - Formant Coupled / Free toggle (2 blinks = coupled, 1 blink = free)
   - P11 + right fader (S37) - **Filter cutoff** (30 Hz–18 kHz; fully up = open)
   - P11 + left fader (S36) - **Filter resonance**
+  - P11 + S30 - **Formant motion**: each formant drifts around the stereo field at its own speed (fully left = still, up to ~3 Hz)
   - P11 + S35 - **Input gain** (−12 to +12 dB, centre = 0 dB) for the live input; while P11 is held the LED shows the input level
 - **P10 + P11 (TO + CH)**:
   - Quick tap both - **Hold** (latch) on / off: the last note keeps sounding hands-free (2 blinks = on, 1 blink = off)
   - Hold both for ~1.5 s - Recalibrate the touch pad baselines (3 rapid blinks)
 
 ### Knobs (clockwise)
-- S30 **Spread** | Fades in formants 2 and 3 above the main formant (fully left = single formant) | Hold TO: **Width** (stereo spread of the formants)
+- S30 **Spread** | Fades in formants 2 and 3 above the main formant (fully left = single formant) | Hold TO: **Width** (stereo spread of the formants) | Hold CH: **Motion**
 - S31 **Formant** | The resonant peak. Coupled: 1×–32× the pitch. Free: 50 Hz–6.4 kHz | Hold TO: **Push** (how far pad pressure raises the formant, up to +2 octaves)
 - S32 **Cluster** | 1 to 7 cycles of the waveform in each pulsaret: longer, more focused bursts | Hold TO: **Edge** (left half: cut each pulsaret at the next pulse with a 0–6 ms crossfade · right half: let pulsarets overlap)
 - S33 **Shape** | Pulsaret waveform, morphing: sine · triangle · saw · square · pulse · vela · noise · **live input** (fully right) | Hold TO: **Fold** (wavefolder)
@@ -69,7 +70,7 @@ Every version is kept in `releases/` with a name saying what changed, so you can
 
 ### Pulsar Synthesis & Expression
 - **Rhythm ↔ Tone**: Each pulse is a short burst (a *pulsaret*) followed by silence. The pulse rate is the pitch, or the tempo when slow. The burst length sets the formant, which works like a resonant filter, though no filter is involved.
-- **Three Formants**: Spread adds two more formants above the main one, each panned by Width, for vowel-like and choral tones.
+- **Three Formants**: Spread adds two more formants above the main one, each panned by Width, for vowel-like and choral tones. **Motion** (P11 + S30) sets them drifting around the stereo field at slightly different speeds, and each pulsar is placed where its formant is at that moment, following Roads' per-formant spatial paths. In RHYTHM every pulse lands somewhere new; at audio rates it becomes a slow swirl. The main formant drifts too, so Motion is audible even with Spread at 0.
 - **Coupled / Free Formant**: Coupled, the formant moves with the note, so the timbre stays the same across the keyboard. Free, it stays fixed in Hz, like a filter while the pitch moves underneath.
 - **Convolution**: Each pulse triggers a copy of the sample filtered by the pulsaret, so the sample is replayed in the pulsar rhythm. Try short percussive sounds in RHYTHM and longer ones in FREE. A wooden knock is built in, and a hold on P01 records your own (input jack, up to 2 s).
 - **Live Input**: Turn **Shape fully right** and the audio on the input jack becomes the pulsaret waveform. Each pulse opens a window onto the incoming sound, and every control applies: Window shapes the gate, Formant + Cluster set how long it opens, Mask and the switches chop the pattern, and Fold, Thick, Filter and Drive sit on top. In RHYTHM it's a tempo-synced gate/stutter; in TONE or FREE the fast gating turns into a pitched, ring-mod-like sound played from the pads. A note must be playing (pad, MIDI or Hold) for the input to be heard. Set the level with **P11 + S35**; while P11 is held, the LED lights when the input is loud enough. Careful with a microphone near speakers: it can feed back.
@@ -140,6 +141,7 @@ PulsarTouch appears as a USB MIDI device when connected via the Daisy Seed's USB
 | 102 | **Filter Cutoff** (CH + S37) |
 | 103 | **Filter Resonance** (CH + S36) |
 | 104 | **Input Gain** (CH + S35) |
+| 105 | **Formant Motion** (CH + S30) |
 | 120, 123 | All Notes Off |
 
 - **Soft Takeover**: A value set via MIDI CC is kept until the corresponding knob or fader is moved; from then on the physical control takes over again.

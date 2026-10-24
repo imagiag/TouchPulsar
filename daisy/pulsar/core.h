@@ -49,6 +49,7 @@ struct Params {
     int32_t sync = -1;           // beat counter from MIDI clock; -1 = free running
     float thick = 0.f;           // 0..1: detuned second train + stereo spread, sub above 0.6
     float inputGain = 1.f;       // live input level (shape 7)
+    float motion = 0.f;          // 0..1 formant motion: each formant drifts in stereo (§3.1 spatial paths)
     float cutoffHz = 18000.f;    // low-pass filter cutoff (fully open by default)
     float resonance = 0.f;       // 0..1
 };
@@ -128,6 +129,7 @@ private:
     double phaseB_ = 0.0, subPhase_ = 0.0;
     uint32_t pulseCountB_ = 0;
     float trainGain_[kNTrain] = {1.f, 0.f}, trainPan_[kNTrain] = {0.f, 0.f};
+    float motPh_[kNForm] = {0.f, 0.33f, 0.67f}, motOff_[kNForm] = {0.f, 0.f, 0.f}; // formant motion LFOs
     int32_t lastSync_ = -1;
     float env_ = 0.f;
     float dcxL_ = 0.f, dcyL_ = 0.f, dcxR_ = 0.f, dcyR_ = 0.f;

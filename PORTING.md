@@ -105,6 +105,6 @@ Plan for when the Touch version moves into a module (noted 2026-10-24; not start
 
 ### Ideas
 - Polyphony: the paper's pulsar generator is monophonic. A paraphonic mode (each pad gets its own f<sub>p</sub>, sharing formant settings) is possible but multiplies voices by 7.
-- Per-formant spatial *paths* (§3.1) instead of static pans: one slow LFO per formant, controlled by the Width knob.
+- **Done (v5): Formant motion**: per-formant spatial paths (§3.1), P11 + S30 (CC 105): each formant has its own stereo LFO (0.05–3 Hz, speed ratios 1 : 1.37 : 1.73), applied per pulsar at emission. Width unchanged.
 - More shapes or windows: the bipolar ring-modulator envelope (Fig. 3h) and user tables drawn on the iPad.
 - Pulsar graph sequencer: record a pad and fader gesture as an f<sub>p</sub> envelope and loop it (Fig. 5 as a playable object).

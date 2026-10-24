@@ -22,6 +22,8 @@ var PS = {
   MAX_KERNEL_SEC: 3,
   RING: 256,          // pulse event ring for UI (LED / pulse strip)
   SHAPE_NAMES: ['sine', 'triangle', 'saw', 'square', 'pulse', 'vela', 'noise', 'input'],
+  MOTION_RATIO: [1, 1.37, 1.73], // formant motion: per-formant LFO speed ratios
+  MOTION_DEPTH: [0.5, 0.6, 0.6],  // and pan depths (main formant drifts less)
   SHAPE_INPUT: 7,     // shape position 7 = live input as the pulsaret waveform (no table)
   WIN_NAMES: ['gauss', 'fof', 'expodec', 'lindec', 'rect', 'linatt', 'expatt'],
   // mask routes
@@ -54,6 +56,7 @@ function PulsarParams() {
   this.sync = -1;               // beat counter from MIDI clock; -1 = free running
   this.thick = 0;               // 0..1: detuned second train + stereo spread, sub above 0.6
   this.inputGain = 1;           // live input level (shape 7)
+  this.motion = 0;              // 0..1 formant motion: each formant drifts in stereo (§3.1 spatial paths)
   this.cutoffHz = 18000;        // low-pass filter cutoff (fully open by default)
   this.resonance = 0;           // 0..1
 }
@@ -100,6 +103,7 @@ function PulsarCore(sampleRate) {
   this.pulseCountB = 0;
   this.subPhase = 0;
   this.trainGain = [1, 0]; this.trainPan = [0, 0];
+  this.motPh = [0, 0.33, 0.67]; this.motOff = [0, 0, 0]; // formant motion LFOs
   this.lastSync = -1;
   this.env = 0;
   this.dcxL = 0; this.dcyL = 0; this.dcxR = 0; this.dcyR = 0;
@@ -243,7 +247,7 @@ PulsarCore.prototype._emit = function (late, train) {
       if (t > bestT) { bestT = t; best = j; }
     }
     var inc = fd / sr;
-    var pan = Math.max(-1, Math.min(1, p.formantPan[f] + tp)) * 0.5 + 0.5;
+    var pan = Math.max(-1, Math.min(1, p.formantPan[f] + tp + this.motOff[f])) * 0.5 + 0.5;
     this.vOn[best] = 1;
     this.vInc[best] = inc;
     this.vPh[best] = late * inc;
@@ -312,6 +316,17 @@ PulsarCore.prototype.process = function (outL, outR, inMono, n) {
   var detMul = Math.pow(2, (3 + 22 * th) / 1200);
   var subLvl = th > 0.6 ? (th - 0.6) / 0.4 * 0.5 : 0;
   var subT = shapes; // sine table = shape 0
+
+  // Formant motion: per-formant stereo LFOs (0.05 Hz .. 3 Hz), applied to each pulsar at emission
+  var mo = p.motion;
+  if (mo > 0) {
+    var mRate = 0.05 * Math.pow(60, mo), mDepth = Math.min(1, mo * 4);
+    for (var mf = 0; mf < PS.NFORM; mf++) {
+      this.motPh[mf] += mRate * PS.MOTION_RATIO[mf] * n / sr;
+      if (this.motPh[mf] >= 1) this.motPh[mf] -= 1;
+      this.motOff[mf] = mDepth * PS.MOTION_DEPTH[mf] * Math.sin(2 * Math.PI * this.motPh[mf]);
+    }
+  } else { this.motOff[0] = this.motOff[1] = this.motOff[2] = 0; }
 
   // Low-pass filter: TPT state-variable filter (stable while sweeping), cutoff smoothed ~5 ms
   var fcT = Math.log(Math.min(Math.max(p.cutoffHz, 20), 0.45 * sr));

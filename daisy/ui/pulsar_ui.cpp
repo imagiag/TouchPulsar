@@ -85,10 +85,10 @@ void PulsarUI::readKnobs() {
     Knobs& k = touch_.knobs();
     AnalogControl* phys[K_COUNT] = {&k.s30(), &k.s31(), &k.s32(), &k.s33(), &k.s34(), &k.s35(), &k.s36(), &k.s37()};
     const bool to = ctl_.ToHeld();
-    const bool chLayer = !to && ctl_.ChHeld(); // P11 layer: S35 input gain, faders = filter (TO wins)
+    const bool chLayer = !to && ctl_.ChHeld(); // P11 layer: S30 motion, S35 input gain, faders = filter (TO wins)
     for (int i = 0; i < K_COUNT; i++) {
         const float v = phys[i]->Process();
-        const bool fader = i == K_MASK || i >= K_LEVEL; // controls with a CH-layer function (S35, S36, S37)
+        const bool fader = i == K_SPREAD || i == K_MASK || i >= K_LEVEL; // controls with a CH-layer function (S30, S35, S36, S37)
         const bool useCh = chLayer && fader;
         if (firstRun_) {
             main_[i].SetTracking(v); ctl_.knob[i] = v;

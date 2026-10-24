@@ -170,6 +170,10 @@ int main() {
         c.knob[K_CLUSTER] = 1.f; c.knob[K_MASK] = 0.25f; c.alt[K_SHAPE] = 0.2f; c.ch[K_MASK] = 0.6f;
         if (!c.touched[6]) c.PadDown(6, 0.8f);
     }, false, true);
+    render("motion", 4, [](Controls& c, double, int) { // 3 formants drifting in stereo, with thick
+        c.knob[K_SPREAD] = 0.6f; c.ch[K_SPREAD] = 0.45f; c.knob[K_FUND] = 0.4f;
+        if (!c.touched[4]) c.PadDown(4, 0.7f);
+    });
     render("conv", 3, [](Controls& c, double, int) {
         c.SetSwitch(SW_RANGE, RHYTHM); c.SetSwitch(SW_MASK, 1); c.convOn = true; c.alt[K_MASK] = 1;
         c.knob[K_MASK] = 0.1f; if (!c.touched[7]) c.PadDown(7, 0.7f);

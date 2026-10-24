@@ -482,7 +482,8 @@ function updateBoard() {
     e._ptr.setAttribute('transform', `rotate(${a})`);
     const ch = chActive(i);
     e._b.textContent = alt ? PC.ALT_NAMES[i] : ch ? PC.CH_NAMES[i] : PC.KNOB_NAMES[i];
-    e._s.textContent = ch ? (20 * Math.log10(params.inputGain)).toFixed(1) + ' dB' : knobText(i, alt);
+    e._s.textContent = !ch ? knobText(i, alt) : i === 0 ? (ctl.ch[0] < 0.005 ? 'static' : (0.05 * Math.pow(60, ctl.ch[0])).toFixed(2) + ' Hz')
+      : (20 * Math.log10(params.inputGain)).toFixed(1) + ' dB';
     e._val.style.stroke = alt ? 'var(--alt)' : ch ? '#b48cf0' : 'var(--gold)';
   }
   board.classList.toggle('ch', chActive(6));
@@ -598,7 +599,7 @@ $('preset').addEventListener('change', (e) => {
 $('helpBody').innerHTML = `
 <table>
 <tr><th>Control</th><th>Main</th><th>Hold P10 (TO) / Shift</th></tr>
-<tr><td>S30</td><td>Spread — adds formants 2 &amp; 3 above f<sub>d</sub></td><td>Width — formant stereo spread</td></tr>
+<tr><td>S30</td><td>Spread — adds formants 2 &amp; 3 above f<sub>d</sub></td><td>Width — formant stereo spread · <i>hold P11: motion (formants drift in stereo)</i></td></tr>
 <tr><td>S31</td><td>Formant f<sub>d</sub> (× f<sub>p</sub> when coupled, Hz when free)</td><td>Push — pad pressure raises formant</td></tr>
 <tr><td>S32</td><td>Cluster — cycles of w per pulsaret (1–7)</td><td>Edge — cut crossfade → overlap (OPulWM)</td></tr>
 <tr><td>S33</td><td>Shape — sine · tri · saw · square · pulse · vela · noise · <b>live input</b></td><td>Fold — wavefolder</td></tr>
@@ -628,7 +629,7 @@ $('helpBody').insertAdjacentHTML('beforeend', '<table><tr><th>CC</th><th>Paramet
    <tr><td>86</td><td>range switch (TONE/FREE/RHYTHM)</td><td>87</td><td>mask switch (BURST/CHAN/STOCH)</td></tr>
    <tr><td>88</td><td>bend range (semitones)</td><td>89</td><td>root from MIDI (≥64 on)</td></tr>
    <tr><td>102</td><td>filter cutoff (P11 + S37)</td><td>103</td><td>filter resonance (P11 + S36)</td></tr>
-   <tr><td>104</td><td>input gain (P11 + S35)</td><td></td><td></td></tr>
+   <tr><td>104</td><td>input gain (P11 + S35)</td><td>105</td><td>formant motion (P11 + S30)</td></tr>
    <tr><td>123</td><td>all notes off</td><td></td><td></td></tr></table>`);
 
 buildBoard();

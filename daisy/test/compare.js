@@ -86,6 +86,10 @@ compare('live_input', 3, (c) => {
   c.knob[PC.K_CLUSTER] = 1; c.knob[PC.K_MASK] = 0.25; c.alt[PC.K_SHAPE] = 0.2; c.ch[PC.K_MASK] = 0.6;
   if (!c.touched[6]) c.padDown(6, 0.8);
 }, false, true);
+compare('motion', 4, (c) => {
+  c.knob[PC.K_SPREAD] = 0.6; c.ch[PC.K_SPREAD] = 0.45; c.knob[PC.K_FUND] = 0.4;
+  if (!c.touched[4]) c.padDown(4, 0.7);
+});
 compare('conv', 3, (c) => {
   c.setSwitch(PC.SW_RANGE, 2); c.setSwitch(PC.SW_MASK, 1); c.convOn = true; c.alt[PC.K_MASK] = 1;
   c.knob[PC.K_MASK] = 0.1; if (!c.touched[7]) c.padDown(7, 0.7);

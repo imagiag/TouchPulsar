@@ -56,6 +56,7 @@ void Core::Init(float sampleRate) {
     ringW_ = 0; pulseCount_ = 0; lastSync_ = -1;
     phaseB_ = 0.0; subPhase_ = 0.0; pulseCountB_ = 0;
     trainGain_[0] = 1.f; trainGain_[1] = 0.f; trainPan_[0] = trainPan_[1] = 0.f;
+    motPh_[0] = 0.f; motPh_[1] = 0.33f; motPh_[2] = 0.67f; motOff_[0] = motOff_[1] = motOff_[2] = 0.f;
     fundLog_ = logf(110.f); fundPhase_ = 0.0; env_ = 0.f;
     dcxL_ = dcyL_ = dcxR_ = dcyR_ = 0.f;
     inPeak_ = 0.f;
@@ -201,7 +202,7 @@ void Core::emit(float late, int train) {
             if (t > bestT) { bestT = t; best = j; }
         }
         const float inc = fd / sr_;
-        const float pan = fminf(1.f, fmaxf(-1.f, p_.formantPan[f] + tp)) * 0.5f + 0.5f;
+        const float pan = fminf(1.f, fmaxf(-1.f, p_.formantPan[f] + tp + motOff_[f])) * 0.5f + 0.5f;
         vOn_[best] = 1;
         vInc_[best] = inc;
         vPh_[best] = late * inc;
@@ -275,6 +276,17 @@ void Core::Process(float* outL, float* outR, const float* in, size_t n) {
     trainPan_[1] = 0.5f * fminf(1.f, th * 2.f); trainPan_[0] = -trainPan_[1];
     const double detMul = (double)powf(2.f, (3.f + 22.f * th) / 1200.f);
     const float subLvl = th > 0.6f ? (th - 0.6f) / 0.4f * 0.5f : 0.f;
+
+    // Formant motion: per-formant stereo LFOs (0.05 Hz .. 3 Hz), applied to each pulsar at emission
+    static const float kMotRatio[kNForm] = {1.f, 1.37f, 1.73f}, kMotDepth[kNForm] = {0.5f, 0.6f, 0.6f};
+    if (p.motion > 0.f) {
+        const float mRate = 0.05f * powf(60.f, p.motion), mDepth = fminf(1.f, p.motion * 4.f);
+        for (int f = 0; f < kNForm; f++) {
+            motPh_[f] += mRate * kMotRatio[f] * (float)n / sr_;
+            if (motPh_[f] >= 1.f) motPh_[f] -= 1.f;
+            motOff_[f] = mDepth * kMotDepth[f] * sinf(2.f * kPi * motPh_[f]);
+        }
+    } else { motOff_[0] = motOff_[1] = motOff_[2] = 0.f; }
 
     // Low-pass filter: TPT state-variable filter (stable while sweeping), cutoff smoothed ~5 ms
     const float fcT = logf(fminf(fmaxf(p.cutoffHz, 20.f), 0.45f * sr_));
