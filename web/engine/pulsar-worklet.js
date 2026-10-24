@@ -37,7 +37,7 @@ class PulsarProcessor extends AudioWorkletProcessor {
         this.routes[k] = c.ring[j]; this.times[k] = c.ringT[j] / sampleRate;
       }
       this.lastW = w; this.lastPost = currentTime;
-      this.port.postMessage({ type: 'pulses', n, routes: this.routes.slice(0, n), times: this.times.slice(0, n), count: c.pulseCount });
+      this.port.postMessage({ type: 'pulses', n, routes: this.routes.slice(0, n), times: this.times.slice(0, n), count: c.pulseCount, inPeak: c.inPeak });
     }
     return true;
   }

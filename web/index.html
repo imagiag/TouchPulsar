@@ -39,7 +39,7 @@
         <span>f<sub>d</sub> <b id="dForm">—</b></span>
         <span id="dNote"></span>
         <span><b id="dScale">Major</b> <span id="dOct"></span></span>
-        <span class="flags"><i id="fMidi">MIDI</i><i id="fExt">EXT</i><i id="fHold">HOLD</i><i id="fConv">CONV</i><i id="fRec">REC</i></span>
+        <span class="flags"><i id="fIn" title="input level">IN</i><i id="fMidi">MIDI</i><i id="fExt">EXT</i><i id="fHold">HOLD</i><i id="fConv">CONV</i><i id="fRec">REC</i></span>
       </div>
       <canvas id="cvPulsaret" height="120"></canvas>
       <div class="cap"><span id="dDuty">d — · p —</span><span id="dShape">sine · gauss</span></div>
@@ -55,7 +55,7 @@
 
     <div class="card">
       <h2>Convolution sample</h2>
-      <p class="muted">Each pulsar triggers a copy of <i>pulsaret ∗ sample</i> (paper §3.3). Tap <b>P01</b> to toggle, hold <b>P01</b> to record the input; mix is <b>P10 + S35</b>.</p>
+      <p class="muted">Each pulsar triggers a copy of <i>pulsaret ∗ sample</i> (paper §3.3). <b>Live input</b>: turn Shape fully right and the input itself becomes the pulsaret waveform (gain: P11 + S35). Tap <b>P01</b> to toggle, hold <b>P01</b> to record the input; mix is <b>P10 + S35</b>.</p>
       <div class="row">
         <select id="demoSample"><option value="">Demo sample…</option></select>
         <label class="btn">Load file<input type="file" id="file" accept="audio/*" hidden></label>

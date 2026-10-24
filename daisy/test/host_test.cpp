@@ -84,12 +84,19 @@ static float pulsBuf[KernelBuilder::kMaxPulsaret];
 
 typedef void (*Script)(Controls&, double t, int block);
 
-static void render(const char* name, float secs, Script script, bool conv = false) {
+// Deterministic test input (also generated in compare.js): two tones + a decaying click every 0.25 s.
+static float testInput(int s) {
+    const float t = s / SR;
+    const float ph = fmodf(t, 0.25f);
+    return 0.4f * sinf(2.f * 3.14159265f * 330.f * t) + 0.2f * sinf(2.f * 3.14159265f * 1250.f * t) + 0.5f * expf(-ph * 60.f) * sinf(2.f * 3.14159265f * 90.f * ph);
+}
+
+static void render(const char* name, float secs, Script script, bool conv = false, bool input = false) {
     core.Init(SR);
     Controls c;
     const int n = (int)(secs * SR);
     std::vector<float> out(n * 2);
-    float L[BLOCK], R[BLOCK];
+    float L[BLOCK], R[BLOCK], IN[BLOCK];
     double cpu = 0;
     for (int i = 0, b = 0; i < n; i += BLOCK, b++) {
         const double t = i / (double)SR;
@@ -107,7 +114,8 @@ static void render(const char* name, float secs, Script script, bool conv = fals
         }
         core.PostParams(p);
         auto s = std::chrono::high_resolution_clock::now();
-        core.Process(L, R, nullptr, BLOCK);
+        for (int j = 0; j < BLOCK; j++) IN[j] = testInput(i + j);
+        core.Process(L, R, input ? IN : nullptr, BLOCK);
         cpu += std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - s).count();
         for (int j = 0; j < BLOCK && i + j < n; j++) { out[(i + j) * 2] = L[j]; out[(i + j) * 2 + 1] = R[j]; }
     }
@@ -157,6 +165,11 @@ int main() {
         c.ch[K_FUND] = (float)fabs(1.0 - t / 2.0); c.ch[K_LEVEL] = 0.75f;
         if (!c.touched[5]) c.PadDown(5, 0.7f);
     });
+    render("live_input", 3, [](Controls& c, double, int) { // input as waveform, rhythmic gate with masking + fold
+        c.SetSwitch(SW_RANGE, RHYTHM); c.coupled = false; c.knob[K_SHAPE] = 1.f; c.knob[K_FORMANT] = 0.1f;
+        c.knob[K_CLUSTER] = 1.f; c.knob[K_MASK] = 0.25f; c.alt[K_SHAPE] = 0.2f; c.ch[K_MASK] = 0.6f;
+        if (!c.touched[6]) c.PadDown(6, 0.8f);
+    }, false, true);
     render("conv", 3, [](Controls& c, double, int) {
         c.SetSwitch(SW_RANGE, RHYTHM); c.SetSwitch(SW_MASK, 1); c.convOn = true; c.alt[K_MASK] = 1;
         c.knob[K_MASK] = 0.1f; if (!c.touched[7]) c.PadDown(7, 0.7f);

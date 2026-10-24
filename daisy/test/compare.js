@@ -6,9 +6,12 @@ const { PC, PulsarControls } = require('../../web/engine/pulsar-controls.js');
 const SR = 48000, BLOCK = 48, OUT = path.join(__dirname, 'out');
 let fail = 0;
 
-function render(name, secs, script, conv) {
+const testInput = (s) => { const t = Math.fround(s / SR), ph = t % 0.25;
+  return 0.4 * Math.sin(2 * Math.PI * 330 * t) + 0.2 * Math.sin(2 * Math.PI * 1250 * t) + 0.5 * Math.exp(-ph * 60) * Math.sin(2 * Math.PI * 90 * ph); };
+
+function render(name, secs, script, conv, input) {
   const core = new PulsarCore(SR), c = new PulsarControls(), p = new PulsarParams();
-  const n = Math.floor(secs * SR), out = new Float32Array(n * 2), L = new Float32Array(BLOCK), R = new Float32Array(BLOCK);
+  const n = Math.floor(secs * SR), out = new Float32Array(n * 2), L = new Float32Array(BLOCK), R = new Float32Array(BLOCK), IN = new Float32Array(BLOCK);
   let kernel = null;
   for (let i = 0, b = 0; i < n; i += BLOCK, b++) {
     const t = i / SR; c.tick(t); script(c, t, b); c.compute(p);
@@ -20,14 +23,15 @@ function render(name, secs, script, conv) {
       kernel = psConvolveKernel(pl, len, smp, 14400, 200000);
       core.setKernel(kernel, kernel.length);
     }
-    core.setParams(p); core.process(L, R, null, BLOCK);
+    for (let j = 0; j < BLOCK; j++) IN[j] = testInput(i + j);
+    core.setParams(p); core.process(L, R, input ? IN : null, BLOCK);
     for (let j = 0; j < BLOCK && i + j < n; j++) { out[(i + j) * 2] = L[j]; out[(i + j) * 2 + 1] = R[j]; }
   }
   return { out, pulses: core.pulseCount, kernel };
 }
 
-function compare(name, secs, script, conv) {
-  const js = render(name, secs, script, conv);
+function compare(name, secs, script, conv, input) {
+  const js = render(name, secs, script, conv, input);
   const cpp = new Float32Array(fs.readFileSync(path.join(OUT, name + '.f32')).buffer.slice(0));
   let sa = 0, sb = 0, sab = 0, ea = 0, eb = 0;
   for (let i = 0; i < js.out.length; i++) { const a = js.out[i], b = cpp[i]; sab += a * b; ea += a * a; eb += b * b; }
@@ -77,6 +81,11 @@ compare('filter', 4, (c, t) => {
   c.ch[PC.K_FUND] = Math.abs(1 - t / 2); c.ch[PC.K_LEVEL] = 0.75;
   if (!c.touched[5]) c.padDown(5, 0.7);
 });
+compare('live_input', 3, (c) => {
+  c.setSwitch(PC.SW_RANGE, 2); c.coupled = false; c.knob[PC.K_SHAPE] = 1; c.knob[PC.K_FORMANT] = 0.1;
+  c.knob[PC.K_CLUSTER] = 1; c.knob[PC.K_MASK] = 0.25; c.alt[PC.K_SHAPE] = 0.2; c.ch[PC.K_MASK] = 0.6;
+  if (!c.touched[6]) c.padDown(6, 0.8);
+}, false, true);
 compare('conv', 3, (c) => {
   c.setSwitch(PC.SW_RANGE, 2); c.setSwitch(PC.SW_MASK, 1); c.convOn = true; c.alt[PC.K_MASK] = 1;
   c.knob[PC.K_MASK] = 0.1; if (!c.touched[7]) c.padDown(7, 0.7);

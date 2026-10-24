@@ -12,7 +12,7 @@ let ctx = null, node = null, analyser = null, micSrc = null, micStream = null;
 let sample = null;                        // Float32Array mono at ctx rate
 let kernelKey = '', kernelDirtyAt = 0;
 const pulses = [];                        // {t, r} from the worklet
-let pulseCount = 0, lastPulseT = -1;
+let pulseCount = 0, lastPulseT = -1, inPeak = 0;
 
 // ------------------------------------------------------------------ layout
 // Positions in % of the board (from the Simple Touch photo, 600 x 972).
@@ -102,7 +102,7 @@ function arc(a0, a1, r) {
 // ------------------------------------------------------------------ input
 const altActive = () => ctl.toHeld();
 
-const chActive = (i) => !altActive() && ctl.chHeld() && i >= PC.K_LEVEL; // P11 + faders = filter
+const chActive = (i) => !altActive() && ctl.chHeld() && PC.CH_KNOBS.indexOf(i) >= 0; // P11: S35 input gain, faders = filter
 function writeKnob(i, v) {
   v = clamp(v, 0, 1);
   if (altActive()) { ctl.alt[i] = v; ctl.modUsed[0] = true; }
@@ -195,7 +195,7 @@ async function ensureAudio() {
 function onWorklet(e) {
   const m = e.data;
   if (m.type === 'pulses') {
-    pulseCount = m.count;
+    pulseCount = m.count; inPeak = m.inPeak || 0;
     for (let k = 0; k < m.n; k++) {
       pulses.push({ t: m.times[k], r: m.routes[k] });
       if (m.routes[k]) lastPulseT = m.times[k];
@@ -480,8 +480,10 @@ function updateBoard() {
     e._val.setAttribute('d', v > 0.003 ? arc(-135, a, 46) : '');
     e._val.style.stroke = alt ? 'var(--alt)' : 'var(--gold)';
     e._ptr.setAttribute('transform', `rotate(${a})`);
-    e._b.textContent = (alt ? PC.ALT_NAMES : PC.KNOB_NAMES)[i];
-    e._s.textContent = knobText(i, alt);
+    const ch = chActive(i);
+    e._b.textContent = alt ? PC.ALT_NAMES[i] : ch ? PC.CH_NAMES[i] : PC.KNOB_NAMES[i];
+    e._s.textContent = ch ? (20 * Math.log10(params.inputGain)).toFixed(1) + ' dB' : knobText(i, alt);
+    e._val.style.stroke = alt ? 'var(--alt)' : ch ? '#b48cf0' : 'var(--gold)';
   }
   board.classList.toggle('ch', chActive(6));
   for (const i of [6, 7]) {
@@ -522,6 +524,7 @@ function updateDisplay(now) {
   $('dForm').textContent = fmtHz(d.formant);
   $('dNote').textContent = d.note;
   $('dScale').textContent = d.scale; $('dOct').textContent = d.oct;
+  $('fIn').classList.toggle('on', inPeak > 0.05);
   $('fMidi').classList.toggle('on', d.midi || now - midiSeenAt < 0.15); $('fExt').classList.toggle('on', d.ext);
   $('fHold').classList.toggle('on', d.latch); $('fConv').classList.toggle('on', d.conv); $('fRec').classList.toggle('on', d.rec);
   $('dShape').textContent = morphName(params.shape, PS.SHAPE_NAMES) + ' · ' + morphName(params.window, PS.WIN_NAMES) + (params.fold > 0.01 ? ' · fold' : '');
@@ -571,12 +574,13 @@ const PRESETS = [
   { name: 'Ondioline', sw: [0, 0], knob: [0, .35, 0, 0, v(4, 6), 0, .7, 0], pad: 5 },
   { name: 'Formant voice', sw: [0, 0], knob: [.55, .5, .12, 0, v(1, 6), 0, .7, .3], alt: { 1: .5 }, pad: 4 },
   { name: 'Fig. 9 · 2:1 subharmonics', sw: [1, 0], coupled: false, knob: [0, 3 / 7, 0, 0, v(4, 6), 7 / 20, .7, Math.log2(400) / 13], pad: 3 },
-  { name: 'Blip rhythm', sw: [2, 0], knob: [.3, .55, .2, v(4, 6), v(2, 6), .25, .75, 0], alt: { 4: .35, 7: .4 }, pad: 6 },
-  { name: 'Channel dialog', sw: [2, 1], knob: [.25, .45, .5, v(1, 6), v(1, 6), 0, .75, 0], alt: { 4: .4, 7: .4 }, pad: 7 },
-  { name: 'Pulse cloud', sw: [1, 2], coupled: false, knob: [.8, .5, .5, v(5, 6), 0, .3, .7, Math.log2(36) / 13], alt: { 0: 1, 2: .8 }, pad: 5 },
-  { name: 'CP 1919 (first pulsar)', sw: [1, 0], coupled: false, knob: [.3, .45, .5, v(5, 6), v(1, 6), 0, .8, Math.log2(0.748 / 0.25) / 13], alt: { 4: .6 }, pad: 3 },
-  { name: 'Thick unison + sub', sw: [0, 0], knob: [.35, .4, .15, v(1, 6), v(1, 6), 0, .7, .75], pad: 3 },
-  { name: 'Analog intermittency', sw: [0, 2], knob: [0, .25, 0, v(3, 6), v(3, 6), .15, .7, 0], pad: 3 },
+  { name: 'Blip rhythm', sw: [2, 0], knob: [.3, .55, .2, v(4, 7), v(2, 6), .25, .75, 0], alt: { 4: .35, 7: .4 }, pad: 6 },
+  { name: 'Channel dialog', sw: [2, 1], knob: [.25, .45, .5, v(1, 7), v(1, 6), 0, .75, 0], alt: { 4: .4, 7: .4 }, pad: 7 },
+  { name: 'Pulse cloud', sw: [1, 2], coupled: false, knob: [.8, .5, .5, v(5, 7), 0, .3, .7, Math.log2(36) / 13], alt: { 0: 1, 2: .8 }, pad: 5 },
+  { name: 'CP 1919 (first pulsar)', sw: [1, 0], coupled: false, knob: [.3, .45, .5, v(5, 7), v(1, 6), 0, .8, Math.log2(0.748 / 0.25) / 13], alt: { 4: .6 }, pad: 3 },
+  { name: 'Thick unison + sub', sw: [0, 0], knob: [.35, .4, .15, v(1, 7), v(1, 6), 0, .7, .75], pad: 3 },
+  { name: 'Live input gate (enable input)', sw: [2, 0], coupled: false, knob: [0, .1, 1, 1, 0, .25, .8, 0], alt: { 7: .25 }, pad: 6 },
+  { name: 'Analog intermittency', sw: [0, 2], knob: [0, .25, 0, v(3, 7), v(3, 6), .15, .7, 0], pad: 3 },
 ];
 PRESETS.forEach((p, i) => { el('option', '', $('preset'), p.name).value = i; });
 el('option', '', $('preset'), 'Preset…').value = ''; $('preset').value = '';
@@ -597,9 +601,9 @@ $('helpBody').innerHTML = `
 <tr><td>S30</td><td>Spread — adds formants 2 &amp; 3 above f<sub>d</sub></td><td>Width — formant stereo spread</td></tr>
 <tr><td>S31</td><td>Formant f<sub>d</sub> (× f<sub>p</sub> when coupled, Hz when free)</td><td>Push — pad pressure raises formant</td></tr>
 <tr><td>S32</td><td>Cluster — cycles of w per pulsaret (1–7)</td><td>Edge — cut crossfade → overlap (OPulWM)</td></tr>
-<tr><td>S33</td><td>Shape — sine · tri · saw · square · pulse · vela · noise</td><td>Fold — wavefolder</td></tr>
+<tr><td>S33</td><td>Shape — sine · tri · saw · square · pulse · vela · noise · <b>live input</b></td><td>Fold — wavefolder</td></tr>
 <tr><td>S34</td><td>Window — gauss · FOF · expodec · lindec · rect · linatt · expatt</td><td>Release</td></tr>
-<tr><td>S35</td><td>Mask — burst ratio b:r or probability</td><td>Conv — convolution mix</td></tr>
+<tr><td>S35</td><td>Mask — burst ratio b:r or probability</td><td>Conv — convolution mix · <i>hold P11: input gain</i></td></tr>
 <tr><td>S36 (L fader)</td><td>Level</td><td>Drive · <i>hold P11: filter resonance</i></td></tr>
 <tr><td>S37 (R fader)</td><td>TONE: thick (detuned 2nd train + width, sub above 60%) · FREE: fundamental 0.25 Hz–2 kHz · RHYTHM: glide</td><td>Tempo · <i>hold P11: filter cutoff</i></td></tr>
 <tr><td>S09/10 switch</td><td colspan="2">TONE (pads = notes) · FREE (fader = f<sub>p</sub>, pads = formant notes) · RHYTHM (pads = note values at tempo)</td></tr>
@@ -624,6 +628,7 @@ $('helpBody').insertAdjacentHTML('beforeend', '<table><tr><th>CC</th><th>Paramet
    <tr><td>86</td><td>range switch (TONE/FREE/RHYTHM)</td><td>87</td><td>mask switch (BURST/CHAN/STOCH)</td></tr>
    <tr><td>88</td><td>bend range (semitones)</td><td>89</td><td>root from MIDI (≥64 on)</td></tr>
    <tr><td>102</td><td>filter cutoff (P11 + S37)</td><td>103</td><td>filter resonance (P11 + S36)</td></tr>
+   <tr><td>104</td><td>input gain (P11 + S35)</td><td></td><td></td></tr>
    <tr><td>123</td><td>all notes off</td><td></td><td></td></tr></table>`);
 
 buildBoard();

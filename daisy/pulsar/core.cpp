@@ -58,6 +58,7 @@ void Core::Init(float sampleRate) {
     trainGain_[0] = 1.f; trainGain_[1] = 0.f; trainPan_[0] = trainPan_[1] = 0.f;
     fundLog_ = logf(110.f); fundPhase_ = 0.0; env_ = 0.f;
     dcxL_ = dcyL_ = dcxR_ = dcyR_ = 0.f;
+    inPeak_ = 0.f;
     fcLog_ = logf(18000.f); f1L_ = f2L_ = f1R_ = f2R_ = 0.f;
     recBuf_ = nullptr; recCap_ = 0; recPos_ = 0;
 }
@@ -239,10 +240,13 @@ void Core::Process(float* outL, float* outR, const float* in, size_t n) {
         fundPhase_ = fundPhase_ > 0.5 ? 1.0 : 0.0;
     }
     int sa, sb, wa, wb; float sX, wX;
-    morph(p.shape, kNShape, sa, sb, sX);
+    morph(p.shape, kNShape + 1, sa, sb, sX); // 7 tables + live input (position 7)
     morph(p.window, kNWin, wa, wb, wX);
+    const bool bIn = sb == kShapeInput;
     const float* SA = shapes_ + sa * (kTable + 1);
-    const float* SB = shapes_ + sb * (kTable + 1);
+    const float* SB = shapes_ + (bIn ? 0 : sb) * (kTable + 1);
+    const float inG = p.inputGain;
+    float inPeak = inPeak_ * 0.9f;
     const float* WA = wins_ + wa * (kWin + 1);
     const float* WB = wins_ + wb * (kWin + 1);
     const float foldG = 1.f + p.fold * 6.f;
@@ -281,6 +285,8 @@ void Core::Process(float* outL, float* outR, const float* in, size_t n) {
     const float fa1 = 1.f / (1.f + fg * (fg + fk)), fa2 = fg * fa1, fa3 = fg * fa2;
 
     for (size_t i = 0; i < n; i++) {
+        const float inS = in ? in[i] * inG : 0.f;
+        if (inS > inPeak) inPeak = inS; else if (-inS > inPeak) inPeak = -inS;
         // ---- fundamental: pulsar emission clock ----
         const double finc = inc0 + incStep * i;
         fundPhase_ += finc;
@@ -314,7 +320,7 @@ void Core::Process(float* outL, float* outR, const float* in, size_t n) {
             const float x = (ph - floorf(ph)) * kTable;
             const int xi = (int)x; const float xf = x - xi;
             const float wa_ = SA[xi] + (SA[xi + 1] - SA[xi]) * xf;
-            const float wb_ = SB[xi] + (SB[xi + 1] - SB[xi]) * xf;
+            const float wb_ = bIn ? inS : SB[xi] + (SB[xi + 1] - SB[xi]) * xf; // live input as waveform
             float w = wa_ + (wb_ - wa_) * sX;
             if (doFold) w = shapeLookupSin(w * foldG); // west-coast fold
             const float y = (ph / len) * kWin;
@@ -373,6 +379,7 @@ void Core::Process(float* outL, float* outR, const float* in, size_t n) {
         float* rb = recBuf_;
         if (rb && in && recPos_ < recCap_) { rb[recPos_] = in[i]; recPos_ = recPos_ + 1; }
     }
+    inPeak_ = inPeak;
 }
 
 size_t Core::RenderPulsaret(const Params& p, float fd, float* out, size_t maxLen) const {

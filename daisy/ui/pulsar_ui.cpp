@@ -85,10 +85,10 @@ void PulsarUI::readKnobs() {
     Knobs& k = touch_.knobs();
     AnalogControl* phys[K_COUNT] = {&k.s30(), &k.s31(), &k.s32(), &k.s33(), &k.s34(), &k.s35(), &k.s36(), &k.s37()};
     const bool to = ctl_.ToHeld();
-    const bool chLayer = !to && ctl_.ChHeld(); // P11 + faders = filter (TO wins if both held)
+    const bool chLayer = !to && ctl_.ChHeld(); // P11 layer: S35 input gain, faders = filter (TO wins)
     for (int i = 0; i < K_COUNT; i++) {
         const float v = phys[i]->Process();
-        const bool fader = i >= K_LEVEL;
+        const bool fader = i == K_MASK || i >= K_LEVEL; // controls with a CH-layer function (S35, S36, S37)
         const bool useCh = chLayer && fader;
         if (firstRun_) {
             main_[i].SetTracking(v); ctl_.knob[i] = v;
@@ -195,6 +195,8 @@ void PulsarUI::updateLed(DaisySeed& hw) {
             else { blinkLit_ = true; blinkPhaseEnd_ = t + blinkOn_ * 1e-3; }
         }
         led = blinkLit_;
+    } else if (ctl_.ChHeld() && !ctl_.ToHeld()) {
+        led = core_.InputPeak() > 0.05f; // P11 held: LED = input level meter (set P11 + S35 gain)
     } else if (core_.Recording()) {
         led = (usAcc_ / 50000u) % 2 == 0; // 10 Hz flash
     } else if (params_.gate > 0.f) {

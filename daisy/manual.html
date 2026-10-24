@@ -135,6 +135,7 @@
       <li>P11 + P01: Formant Coupled / Free toggle (2 blinks = coupled, 1 blink = free)</li>
       <li>P11 + right fader (S37): <b>Filter cutoff</b> (30&nbsp;Hz–18&nbsp;kHz; fully up = open)</li>
       <li>P11 + left fader (S36): <b>Filter resonance</b></li>
+      <li>P11 + S35: <b>Input gain</b> (−12 to +12&nbsp;dB, centre = 0&nbsp;dB) for the live input; while P11 is held the LED shows the input level</li>
     </ul></td></tr>
   <tr><td class="id">P10 + P11</td><td>
     <ul style="margin:0">
@@ -149,9 +150,9 @@
   <tr><td class="id">S30</td><td><b>Spread</b>: fades in formants 2 and 3 above the main formant (fully left = single formant)</td><td><span class="to">Width</span>: stereo spread of the formants</td></tr>
   <tr><td class="id">S31</td><td><b>Formant</b>: the resonant peak. Coupled: 1×–32× the pitch. Free: 50&nbsp;Hz–6.4&nbsp;kHz</td><td><span class="to">Push</span>: how far pad pressure raises the formant, up to +2 octaves</td></tr>
   <tr><td class="id">S32</td><td><b>Cluster</b>: 1 to 7 cycles of the waveform in each pulsaret: longer, more focused bursts</td><td><span class="to">Edge</span>: left half: cut each pulsaret at the next pulse with a 0–6&nbsp;ms crossfade · right half: let pulsarets overlap</td></tr>
-  <tr><td class="id">S33</td><td><b>Shape</b>: pulsaret waveform, morphing: sine · triangle · saw · square · pulse · vela · noise</td><td><span class="to">Fold</span>: wavefolder</td></tr>
+  <tr><td class="id">S33</td><td><b>Shape</b>: pulsaret waveform, morphing: sine · triangle · saw · square · pulse · vela · noise · <b>live input</b> (fully right)</td><td><span class="to">Fold</span>: wavefolder</td></tr>
   <tr><td class="id">S34</td><td><b>Window</b>: pulsaret envelope, morphing: gauss · FOF · exp decay · linear decay · rectangle · linear attack · exp attack</td><td><span class="to">Release</span>: 20&nbsp;ms–4&nbsp;s</td></tr>
-  <tr><td class="id">S35</td><td><b>Mask</b>: removes pulsars from the train. BURST/CHANNEL: burst ratio from 1:0 (no masking) to 1:6 · STOCH: chance each pulsar plays, 100% → 3%</td><td><span class="to">Conv</span>: convolution mix</td></tr>
+  <tr><td class="id">S35</td><td><b>Mask</b>: removes pulsars from the train. BURST/CHANNEL: burst ratio from 1:0 (no masking) to 1:6 · STOCH: chance each pulsar plays, 100% → 3%</td><td><span class="to">Conv</span>: convolution mix · <b style="color:#8b5fd6">Hold CH: Input gain</b></td></tr>
 </table>
 
 <h3 id="faders">Faders</h3>
@@ -192,6 +193,7 @@
   <li><b>Three Formants</b>: Spread adds two more formants above the main one, each panned by Width, for vowel-like and choral tones.</li>
   <li><b>Coupled / Free Formant</b>: Coupled, the formant moves with the note, so the timbre stays the same across the keyboard. Free, it stays fixed in Hz, like a filter while the pitch moves underneath.</li>
   <li><b>Convolution</b>: Each pulse triggers a copy of the sample filtered by the pulsaret, so the sample is replayed in the pulsar rhythm. Try short percussive sounds in RHYTHM and longer ones in FREE. A wooden knock is built in, and a hold on P01 records your own (input jack, up to 2&nbsp;s).</li>
+  <li><b>Live Input</b>: Turn <b>Shape fully right</b> and the audio on the input jack becomes the pulsaret waveform. Each pulse opens a window onto the incoming sound, and every control applies: Window shapes the gate, Formant + Cluster set how long it opens, Mask and the switches chop the pattern, and Fold, Thick, Filter and Drive sit on top. In RHYTHM it's a tempo-synced gate/stutter; in TONE or FREE the fast gating turns into a pitched, ring-mod-like sound played from the pads. A note must be playing (pad, MIDI or Hold) for the input to be heard. Set the level with <b>P11 + S35</b>; while P11 is held, the LED lights when the input is loud enough. Careful with a microphone near speakers: it can feed back.</li>
   <li><b>Filter</b>: Hold P11 and move the faders: right = cutoff, left = resonance. It's a smooth 12&nbsp;dB/oct low-pass on both channels, placed before Drive so Drive saturates the resonance. At power-up it's fully open (no change to the sound).</li>
   <li><b>Thick</b>: In TONE, the right fader doubles the pulsar train with a detuned copy, like two slightly out-of-tune oscillators: the sound gets wide, chorused and alive, and a sub-octave sine comes in at the top. The copy uses the same formants, shape and masking, so it keeps the pulsar character.</li>
   <li><b>Pressure</b>: Pressing harder makes a note louder and pushes the formant up (set with Push). Hold keeps the last pressure level.</li>
@@ -221,6 +223,7 @@
   <li><b>Tempo</b>: 1 blink on P10 + P00/P02.</li>
   <li><b>Hold / Convolution / Formant Mode</b>: 2 blinks = on (coupled), 1 blink = off (free).</li>
   <li><b>Recording</b>: Fast flashing while P01 records; 3 blinks when the sample is captured.</li>
+  <li><b>Input Level</b>: While P11 is held, the LED lights when the input signal is above about −26&nbsp;dB, to help set P11 + S35.</li>
   <li><b>Recalibration</b>: 3 rapid blinks confirm the touch sensor baseline reset.</li>
 </ul>
 
@@ -255,6 +258,7 @@
   <tr><td class="id">77</td><td>S30 <b>Spread</b></td><td class="id">87</td><td>Right switch <b>Masking</b> (0–42 BURST, 43–85 CHANNEL, 86–127 STOCH)</td></tr>
   <tr><td class="id">120, 123</td><td>All Notes Off</td><td class="id">88</td><td><b>Pitch Bend Range</b> (semitones)</td></tr>
   <tr><td class="id">102</td><td><b>Filter Cutoff</b> (CH + S37)</td><td class="id">103</td><td><b>Filter Resonance</b> (CH + S36)</td></tr>
+  <tr><td class="id">104</td><td><b>Input Gain</b> (CH + S35)</td><td></td><td></td></tr>
   <tr><td></td><td></td><td class="id">89</td><td><b>Root from MIDI</b> (≥ 64 on: the lowest held note sets the root key; off by default)</td></tr>
 </table>
 <p><b>Soft Takeover</b>: A value set via MIDI CC is kept until the corresponding knob or fader is moved; from then on the physical control takes over again.</p>

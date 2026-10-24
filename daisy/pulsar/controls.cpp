@@ -25,7 +25,7 @@ static const int kCcMap[16][3] = {
     {77, 0, 0}, {74, 0, 1}, {71, 0, 2}, {75, 0, 3}, {76, 0, 4}, {85, 0, 5}, {7, 0, 6}, {5, 0, 7},
     {78, 1, 0}, {79, 1, 1}, {80, 1, 2}, {81, 1, 3}, {72, 1, 4}, {82, 1, 5}, {83, 1, 6}, {84, 1, 7},
 };
-enum { CC_CUTOFF = 102, CC_RES = 103, CC_MOD = 1, CC_SUSTAIN = 64, CC_RANGE = 86, CC_MASKMODE = 87, CC_BEND_RANGE = 88, CC_ROOT_FROM_MIDI = 89 };
+enum { CC_CUTOFF = 102, CC_RES = 103, CC_IN_GAIN = 104, CC_MOD = 1, CC_SUSTAIN = 64, CC_RANGE = 86, CC_MASKMODE = 87, CC_BEND_RANGE = 88, CC_ROOT_FROM_MIDI = 89 };
 static constexpr float kLegatoGlideSec = 0.06f;
 static constexpr double kHoldSec = 0.4, kLatchMaxSec = 1.0, kRecalSec = 1.5;
 
@@ -36,7 +36,8 @@ Controls::Controls() {
     static const float k[K_COUNT] = {0.15f, 0.45f, 0.f, 0.f, 0.f, 0.f, 0.7f, 0.35f};
     static const float a[K_COUNT] = {0.6f, 0.35f, 0.3f, 0.f, 0.3f, 0.6f, 0.15f, 0.25f};
     for (int i = 0; i < K_COUNT; i++) { knob[i] = k[i]; alt[i] = a[i]; ch[i] = 0.f; }
-    ch[K_FUND] = 1.f; // filter fully open
+    ch[K_FUND] = 1.f;   // filter fully open
+    ch[K_MASK] = 0.5f;  // input gain 0 dB
     sw[0] = sw[1] = 0;
     for (int i = 0; i < 12; i++) { touched[i] = 0; pressure[i] = 0.f; padDownAt_[i] = 0; consumed_[i] = 0; }
     for (int i = 0; i < 128; i++) { midiVel_[i] = 0.f; midiAT_[i] = 0.f; }
@@ -209,7 +210,8 @@ void Controls::cc(int c, int v) {
     const float x = v / 127.f;
     for (int i = 0; i < 16; i++)
         if (kCcMap[i][0] == c) { (kCcMap[i][1] ? alt : knob)[kCcMap[i][2]] = x; return; }
-    if (c == CC_CUTOFF) ch[K_FUND] = x;
+    if (c == CC_IN_GAIN) ch[K_MASK] = x;
+    else if (c == CC_CUTOFF) ch[K_FUND] = x;
     else if (c == CC_RES) ch[K_LEVEL] = x;
     else if (c == CC_MOD) mod_ = x;
     else if (c == CC_SUSTAIN) {
@@ -306,7 +308,7 @@ void Controls::Compute(Params& out) const {
     out.formantAmp[2] = clampf(s * 3.f - 0.6f, 0.f, 1.f) * 0.5f;
     out.formantPan[0] = 0.f; out.formantPan[1] = -w; out.formantPan[2] = w;
     out.cluster = 1.f + knob[K_CLUSTER] * 6.f;
-    out.shape = knob[K_SHAPE] * 6.f;
+    out.shape = knob[K_SHAPE] * 7.f; // 7 = live input
     out.window = knob[K_WINDOW] * 6.f;
     out.fold = alt[K_SHAPE];
     out.edge = alt[K_CLUSTER];
@@ -332,6 +334,7 @@ void Controls::Compute(Params& out) const {
     out.drive = alt[K_LEVEL];
     out.cutoffHz = pcExp(ch[K_FUND], 30.f, 18000.f);
     out.resonance = ch[K_LEVEL];
+    out.inputGain = pcExp(ch[K_MASK], 0.25f, 4.f); // -12..+12 dB, centre = 0 dB
 }
 
 } // namespace pulsar

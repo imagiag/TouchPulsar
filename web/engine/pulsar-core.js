@@ -21,7 +21,8 @@ var PS = {
   NCONV: 12,          // overlapping convolved-kernel voices
   MAX_KERNEL_SEC: 3,
   RING: 256,          // pulse event ring for UI (LED / pulse strip)
-  SHAPE_NAMES: ['sine', 'triangle', 'saw', 'square', 'pulse', 'vela', 'noise'],
+  SHAPE_NAMES: ['sine', 'triangle', 'saw', 'square', 'pulse', 'vela', 'noise', 'input'],
+  SHAPE_INPUT: 7,     // shape position 7 = live input as the pulsaret waveform (no table)
   WIN_NAMES: ['gauss', 'fof', 'expodec', 'lindec', 'rect', 'linatt', 'expatt'],
   // mask routes
   R_MUTE: 0, R_BOTH: 1, R_LEFT: 2, R_RIGHT: 3,
@@ -52,6 +53,7 @@ function PulsarParams() {
   this.drive = 0;               // 0..1
   this.sync = -1;               // beat counter from MIDI clock; -1 = free running
   this.thick = 0;               // 0..1: detuned second train + stereo spread, sub above 0.6
+  this.inputGain = 1;           // live input level (shape 7)
   this.cutoffHz = 18000;        // low-pass filter cutoff (fully open by default)
   this.resonance = 0;           // 0..1
 }
@@ -101,6 +103,7 @@ function PulsarCore(sampleRate) {
   this.lastSync = -1;
   this.env = 0;
   this.dcxL = 0; this.dcyL = 0; this.dcxR = 0; this.dcyR = 0;
+  this.inPeak = 0;               // input level meter (after gain)
   this.fcLog = Math.log(18000);  // smoothed filter cutoff (log Hz)
   this.f1L = 0; this.f2L = 0; this.f1R = 0; this.f2R = 0; // SVF state
   this.recBuf = null;
@@ -275,9 +278,13 @@ PulsarCore.prototype.process = function (outL, outR, inMono, n) {
     this.lastSync = p.sync;
     if (this.fundPhase > 0.5) this.fundPhase = 1; else this.fundPhase = 0;
   }
-  psMorph(p.shape, PS.NSHAPE, _mS);
+  // shape morph runs over 7 tables + live input (position 7)
+  psMorph(p.shape, PS.NSHAPE + 1, _mS);
   psMorph(p.window, PS.NWIN, _mW);
-  var sA = _mS[0] * (T + 1), sB = _mS[1] * (T + 1), sX = _mS[2];
+  var bIn = _mS[1] === PS.SHAPE_INPUT;
+  var sA = _mS[0] * (T + 1), sB = bIn ? 0 : _mS[1] * (T + 1), sX = _mS[2];
+  var inG = p.inputGain;
+  this.inPeak *= 0.9;
   var wA = _mW[0] * (W + 1), wB = _mW[1] * (W + 1), wX = _mW[2];
   var foldG = 1 + p.fold * 6, doFold = p.fold > 0.001;
 
@@ -314,6 +321,8 @@ PulsarCore.prototype.process = function (outL, outR, inMono, n) {
   var fa1 = 1 / (1 + fg * (fg + fk)), fa2 = fg * fa1, fa3 = fg * fa2;
 
   for (var i = 0; i < n; i++) {
+    var inS = inMono ? inMono[i] * inG : 0;
+    if (inS > this.inPeak) this.inPeak = inS; else if (-inS > this.inPeak) this.inPeak = -inS;
     // ---- fundamental: pulsar emission clock ----
     var finc = inc0 + incStep * i;
     this.fundPhase += finc;
@@ -348,7 +357,7 @@ PulsarCore.prototype.process = function (outL, outR, inMono, n) {
       var x = (ph - Math.floor(ph)) * T, xi = x | 0, xf = x - xi;
       var a0 = shapes[sA + xi], b0 = shapes[sB + xi];
       var wa = a0 + (shapes[sA + xi + 1] - a0) * xf;
-      var wb = b0 + (shapes[sB + xi + 1] - b0) * xf;
+      var wb = bIn ? inS : b0 + (shapes[sB + xi + 1] - b0) * xf; // live input as waveform
       var w = wa + (wb - wa) * sX;
       if (doFold) w = Math.sin(w * foldG * Math.PI * 0.5); // west-coast fold
       // envelope over the whole pulsaret duration d = cluster / f_d

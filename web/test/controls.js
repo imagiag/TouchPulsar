@@ -142,6 +142,27 @@ near(p.cutoffHz, 30, 1e-6, 'CC102 = cutoff'); near(p.resonance, 1, 1e-9, 'CC103 
   assert(sweep.peak <= 1.0001, 'full-resonance sweep stays bounded, peak ' + sweep.peak); pass++;
 }
 
+// --- live input as the pulsaret waveform (Shape fully right) ---
+c = new PulsarControls(); c.knob[PC.K_SHAPE] = 1;
+p = c.compute(new PulsarParams()); eq(p.shape, 7, 'Shape fully right = live input'); near(p.inputGain, 1, 1e-9, 'input gain 0 dB by default');
+c.padDown(PC.P_CH, .7); c.turn(PC.K_MASK, 1); c.padUp(PC.P_CH);
+p = c.compute(new PulsarParams()); near(p.inputGain, 4, 1e-9, 'P11 + S35 = input gain (+12 dB)'); eq(c.knob[PC.K_MASK], 0, 'mask untouched');
+c.cc(104, 0); near(c.compute(new PulsarParams()).inputGain, 0.25, 1e-9, 'CC104 = input gain');
+{
+  const run = (gate, shape) => { const core = new PulsarCore(48000), pp = new PulsarParams(), L = new Float32Array(48), R = new Float32Array(48), inp = new Float32Array(48);
+    pp.fundHz = 50; pp.formantHz = [100, 0, 0]; pp.cluster = 1; pp.window = 4; pp.gate = gate; pp.shape = shape;
+    let e = 0, corr = 0, ee = 0, t = 0;
+    for (let b = 0; b < 1000; b++) { for (let i = 0; i < 48; i++) inp[i] = 0.5 * Math.sin(2 * Math.PI * 1000 * (t + i) / 48000);
+      core.setParams(pp); core.process(L, R, inp, 48);
+      for (let i = 0; i < 48; i++) { e += L[i] * L[i]; corr += L[i] * inp[i]; ee += inp[i] * inp[i]; } t += 48; }
+    return { rms: Math.sqrt(e / 48000), corr: corr / Math.sqrt(e * ee + 1e-12), peak: core.inPeak }; };
+  const live = run(1, 7), noteOff = run(0, 7), table = run(1, 0);
+  assert(live.rms > 0.05 && live.corr > 0.5, 'input comes through as the waveform: ' + JSON.stringify(live)); pass++;
+  assert(noteOff.rms < 1e-4, 'no note = no input heard'); pass++;
+  assert(Math.abs(table.corr) < 0.1, 'other shapes ignore the input'); pass++;
+  near(live.peak, 0.5, 0.01, 'input meter reads the level');
+}
+
 // --- hold (latch) on short P10+P11, recalibrate on long ---
 c = new PulsarControls(); c.tick(10);
 c.padDown(PC.P_TO, .7); c.padDown(PC.P_CH, .7); c.tick(10.2); c.padUp(PC.P_CH); c.padUp(PC.P_TO);

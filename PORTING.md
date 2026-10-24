@@ -73,7 +73,9 @@ PulsarTouch/
 - **Done (v3): Filter**: P11 + right fader = low-pass cutoff, P11 + left fader = resonance (TPT state-variable filter, 12 dB/oct, before Drive; CC 102/103).
 - **Chorus / ensemble** (option on top of Thick): 2–3 modulated short delays in stereo (~30 ms buffer), for an even lusher sound that also works on the convolved sound. Not built yet. (Noted 2026-10-24.)
 - **Silent recording feedback**: recording with nothing on the input still blinks 3× (the old sample stays). Give silence its own blink pattern (e.g. 1 long blink) so it's clear nothing was captured. (Noted 2026-10-24.)
-- **Live input processing**: the input jack is only used for P01 recording; nothing is heard live. Idea: let the pulsar train gate the incoming audio in real time ("pulsar-masked input": each pulsaret window opens the input, masking applies), mixed by a control. Cheap on Daisy. (Noted 2026-10-24.)
+- **Done (v4): Live input, step 1**: Shape fully right = the input jack as the pulsaret waveform (all pulsar controls apply); P11 + S35 = input gain (CC 104); LED input meter while P11 is held.
+- **Live input, step 2 — pulsar echo**: live convolution of the input with the pulse train = a multi-tap delay with one tap per recent pulse (2 s SDRAM ring buffer, ~12 taps), so masking shapes the echo pattern. P01 tap would cycle off → sample conv → live echo. Not built yet.
+- **Live input, step 3 — input as controller**: envelope follower → gate/pressure, transient detection → trigger pulses. Not built yet.
 
 ### Ideas
 - Polyphony: the paper's pulsar generator is monophonic. A paraphonic mode (each pad gets its own f<sub>p</sub>, sharing formant settings) is possible but multiplies voices by 7.

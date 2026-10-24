@@ -13,7 +13,8 @@ namespace pulsar {
 
 constexpr int kTable = 2048;   // pulsaret waveform table (power of two)
 constexpr int kWin = 1024;     // pulsaret envelope table
-constexpr int kNShape = 7;
+constexpr int kNShape = 7;     // waveform tables
+constexpr int kShapeInput = 7; // shape position 7 = live input as the pulsaret waveform
 constexpr int kNWin = 7;
 constexpr int kNForm = 3;      // formants sharing one fundamental
 constexpr int kNVoice = 8;     // overlapping pulsarets per formant per train
@@ -47,6 +48,7 @@ struct Params {
     float drive = 0.f;
     int32_t sync = -1;           // beat counter from MIDI clock; -1 = free running
     float thick = 0.f;           // 0..1: detuned second train + stereo spread, sub above 0.6
+    float inputGain = 1.f;       // live input level (shape 7)
     float cutoffHz = 18000.f;    // low-pass filter cutoff (fully open by default)
     float resonance = 0.f;       // 0..1
 };
@@ -76,6 +78,7 @@ public:
     // UI: pulse events (route + count) for the LED.
     uint32_t PulseCount() const { return pulseCount_; }
     uint32_t RingWrite() const { return ringW_; }
+    float InputPeak() const { return inPeak_; }     // input level after gain (LED meter)
     uint8_t RingRoute(uint32_t i) const { return ring_[i % kRing]; }
 
     // Offline helper (main loop, not the audio thread): one pulsaret at
@@ -128,6 +131,7 @@ private:
     int32_t lastSync_ = -1;
     float env_ = 0.f;
     float dcxL_ = 0.f, dcyL_ = 0.f, dcxR_ = 0.f, dcyR_ = 0.f;
+    volatile float inPeak_ = 0.f;
     float fcLog_ = 9.79813f;     // log(18000): smoothed filter cutoff
     float f1L_ = 0.f, f2L_ = 0.f, f1R_ = 0.f, f2R_ = 0.f; // SVF state
 

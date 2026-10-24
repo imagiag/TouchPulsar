@@ -36,6 +36,7 @@ Every version is kept in `releases/` with a name saying what changed, so you can
   - P11 + P01 - Formant Coupled / Free toggle (2 blinks = coupled, 1 blink = free)
   - P11 + right fader (S37) - **Filter cutoff** (30 Hz–18 kHz; fully up = open)
   - P11 + left fader (S36) - **Filter resonance**
+  - P11 + S35 - **Input gain** (−12 to +12 dB, centre = 0 dB) for the live input; while P11 is held the LED shows the input level
 - **P10 + P11 (TO + CH)**:
   - Quick tap both - **Hold** (latch) on / off: the last note keeps sounding hands-free (2 blinks = on, 1 blink = off)
   - Hold both for ~1.5 s - Recalibrate the touch pad baselines (3 rapid blinks)
@@ -44,9 +45,9 @@ Every version is kept in `releases/` with a name saying what changed, so you can
 - S30 **Spread** | Fades in formants 2 and 3 above the main formant (fully left = single formant) | Hold TO: **Width** (stereo spread of the formants)
 - S31 **Formant** | The resonant peak. Coupled: 1×–32× the pitch. Free: 50 Hz–6.4 kHz | Hold TO: **Push** (how far pad pressure raises the formant, up to +2 octaves)
 - S32 **Cluster** | 1 to 7 cycles of the waveform in each pulsaret: longer, more focused bursts | Hold TO: **Edge** (left half: cut each pulsaret at the next pulse with a 0–6 ms crossfade · right half: let pulsarets overlap)
-- S33 **Shape** | Pulsaret waveform, morphing: sine · triangle · saw · square · pulse · vela · noise | Hold TO: **Fold** (wavefolder)
+- S33 **Shape** | Pulsaret waveform, morphing: sine · triangle · saw · square · pulse · vela · noise · **live input** (fully right) | Hold TO: **Fold** (wavefolder)
 - S34 **Window** | Pulsaret envelope, morphing: gauss · FOF · exp decay · linear decay · rectangle · linear attack · exp attack | Hold TO: **Release** (20 ms–4 s)
-- S35 **Mask** | Removes pulsars from the train. BURST/CHANNEL: burst ratio from 1:0 (no masking) to 1:6 · STOCH: chance each pulsar plays, 100% → 3% | Hold TO: **Conv** (convolution mix)
+- S35 **Mask** | Removes pulsars from the train. BURST/CHANNEL: burst ratio from 1:0 (no masking) to 1:6 · STOCH: chance each pulsar plays, 100% → 3% | Hold TO: **Conv** (convolution mix) | Hold CH: **Input gain**
 
 ### Faders
 - S36 (left) **Level** | Output volume (Hold TO: **Drive** — warm saturation) (Hold CH: **Resonance**)
@@ -71,6 +72,7 @@ Every version is kept in `releases/` with a name saying what changed, so you can
 - **Three Formants**: Spread adds two more formants above the main one, each panned by Width, for vowel-like and choral tones.
 - **Coupled / Free Formant**: Coupled, the formant moves with the note, so the timbre stays the same across the keyboard. Free, it stays fixed in Hz, like a filter while the pitch moves underneath.
 - **Convolution**: Each pulse triggers a copy of the sample filtered by the pulsaret, so the sample is replayed in the pulsar rhythm. Try short percussive sounds in RHYTHM and longer ones in FREE. A wooden knock is built in, and a hold on P01 records your own (input jack, up to 2 s).
+- **Live Input**: Turn **Shape fully right** and the audio on the input jack becomes the pulsaret waveform. Each pulse opens a window onto the incoming sound, and every control applies: Window shapes the gate, Formant + Cluster set how long it opens, Mask and the switches chop the pattern, and Fold, Thick, Filter and Drive sit on top. In RHYTHM it's a tempo-synced gate/stutter; in TONE or FREE the fast gating turns into a pitched, ring-mod-like sound played from the pads. A note must be playing (pad, MIDI or Hold) for the input to be heard. Set the level with **P11 + S35**; while P11 is held, the LED lights when the input is loud enough. Careful with a microphone near speakers: it can feed back.
 - **Filter**: Hold P11 and move the faders: right = cutoff, left = resonance. It's a smooth 12 dB/oct low-pass on both channels, placed before Drive so Drive saturates the resonance. At power-up it's fully open (no change to the sound).
 - **Thick**: In TONE, the right fader doubles the pulsar train with a detuned copy, like two slightly out-of-tune oscillators: the sound gets wide, chorused and alive, and a sub-octave sine comes in at the top. The copy uses the same formants, shape and masking, so it keeps the pulsar character.
 - **Pressure**: Pressing harder makes a note louder and pushes the formant up (set with Push). Hold keeps the last pressure level.
@@ -95,6 +97,7 @@ The onboard LED provides visual feedback:
 - **Tempo**: 1 blink on P10 + P00/P02.
 - **Hold / Convolution / Formant Mode**: 2 blinks = on (coupled), 1 blink = off (free).
 - **Recording**: Fast flashing while P01 records; 3 blinks when the sample is captured.
+- **Input Level**: While P11 is held, the LED lights when the input signal is above about −26 dB, to help set P11 + S35.
 - **Recalibration**: 3 rapid blinks confirm the touch sensor baseline reset.
 
 ### MIDI
@@ -136,6 +139,7 @@ PulsarTouch appears as a USB MIDI device when connected via the Daisy Seed's USB
 | 89 | **Root from MIDI** (≥ 64 on: the lowest held note sets the root key; off by default) |
 | 102 | **Filter Cutoff** (CH + S37) |
 | 103 | **Filter Resonance** (CH + S36) |
+| 104 | **Input Gain** (CH + S35) |
 | 120, 123 | All Notes Off |
 
 - **Soft Takeover**: A value set via MIDI CC is kept until the corresponding knob or fader is moved; from then on the physical control takes over again.
