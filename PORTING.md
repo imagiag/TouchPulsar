@@ -66,7 +66,33 @@ PulsarTouch/
 
 **Single source of truth.** After the C++ port, compile the core to WebAssembly (Emscripten) and load it in the worklet instead of `pulsar-core.js`. Browser, iPad and Daisy then run identical DSP. Keep `web/test/render.js` as a golden-output test: render the same scenarios from JS and C++ and compare the results (the xorshift RNG makes stochastic masking deterministic).
 
-## 3. Open questions / next steps
+## 3. Eurorack (later)
+
+Plan for when the Touch version moves into a module (noted 2026-10-24; not started).
+
+**Candidate hardware:** Electrosmith **Seed3 Eurorack Dev Kit** (28 HP; 8 pots, 2 toggles, 2 buttons, 4 CV in, 2 gate in, 2 CV out, MIDI, microSD, stereo AC-coupled audio). Smaller and cheaper alternative: **Patch Submodule / patch.Init()**.
+
+**Seed3 vs. the current Seed:** same STM32H750 at 480 MHz, about 64 MB SDRAM and 8 MB QSPI flash; new audio codec and USB-C, pin-compatible. There's no extra CPU, and none is needed: Pulsar uses a few percent. The real constraint is the 128 KB internal flash (90% used now). The fix is the **Daisy bootloader** (app stored in QSPI, run from SRAM, about 480 KB of code), and it works on the current Seed too.
+
+**What carries over:** `pulsar/core.*` and most of `pulsar/controls.*` (platform-free), plus `test/`. **What's new:** the control layout and the hardware glue, because there are no touch pads.
+
+| Kit | Pulsar |
+|---|---|
+| 8 pots | the 6 knobs + 2 faders, 1:1 |
+| CV 1 | **V/oct** → TONE pitch, RHYTHM rate, FREE formant note (needs a 1 V / 3 V calibration) |
+| CV 2–4 | formant, mask, cluster/shape modulation |
+| Gate 1 | note gate (replaces the pads); unpatched = drone (Hold) |
+| Gate 2 | clock/sync in (hardware version of MIDI clock sync) |
+| CV out 1 | **pulse out**: a trigger per emitted pulsar, so masking patterns can drive other modules |
+| CV out 2 | envelope out, or the input level |
+| Toggles + buttons | Range and Mask modes; a shift button for the second knob layer and the filter |
+| microSD | load samples for convolution (instead of 2 s recordings) |
+
+**Check before starting:**
+1. Seed3 support in libDaisy: the new codec needs a recent libDaisy (the copy in `../TouchString/lib` may be older).
+2. The kit's toggles: if they're 2-position, Range and Mask (3 modes each) need another scheme, e.g. toggle + button, or a pot with detents.
+
+## 4. Open questions / next steps
 
 ### Feedback from playing the hardware
 - ~~**Right fader (S37) in TONE**: glide is rarely useful musically.~~ **Done (v2):** S37 in TONE is now **Thick**: a detuned second train (3–25 cents) spread L/R, plus a sub-octave sine above 60%. Glide in TONE is now a fixed 60 ms, on MIDI legato only.
