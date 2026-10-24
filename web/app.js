@@ -174,8 +174,8 @@ async function ensureAudio() {
   if (ctx) { if (ctx.state !== 'running') ctx.resume(); return; }
   ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
   const [core, wk] = await Promise.all([
-    fetch('engine/pulsar-core.js').then((r) => r.text()),
-    fetch('engine/pulsar-worklet.js').then((r) => r.text()),
+    fetch('engine/pulsar-core.js', { cache: 'no-store' }).then((r) => r.text()),
+    fetch('engine/pulsar-worklet.js', { cache: 'no-store' }).then((r) => r.text()),
   ]);
   const url = URL.createObjectURL(new Blob([core, '\n', wk], { type: 'application/javascript' }));
   await ctx.audioWorklet.addModule(url);

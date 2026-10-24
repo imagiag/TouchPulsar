@@ -7,7 +7,7 @@ Based on Curtis Roads, *Sound Composition with Pulsars*, Journal of the Audio En
 ## Run the browser prototype
 
 ```bash
-python3 -m http.server 8765 --directory web
+python3 web/serve.py        # local server that never caches, so changes always load
 ```
 
 Open <http://localhost:8765>, press **Start audio** (or touch any pad), pick a preset. The page has to be served over http (not opened as a file) because the AudioWorklet is loaded with `fetch`.
