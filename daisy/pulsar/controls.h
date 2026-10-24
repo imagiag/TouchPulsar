@@ -43,7 +43,7 @@ public:
     // state (public, like the JS object; the UI glue reads/writes knob/alt)
     float knob[K_COUNT];
     float alt[K_COUNT];
-    float ch[K_COUNT];      // CH layer: ch[K_SPREAD] motion, ch[K_MASK] input gain, ch[K_LEVEL] resonance, ch[K_FUND] cutoff
+    float ch[K_COUNT];      // CH layer: ch[K_SPREAD] motion, ch[K_WINDOW] lift window, ch[K_MASK] input gain, ch[K_LEVEL] resonance, ch[K_FUND] cutoff
     int sw[2];
     uint8_t touched[12];
     float pressure[12];
@@ -60,6 +60,8 @@ public:
     bool ChHeld() const { return touched[P_CH]; }
     bool Chromatic() const { return scale == 0; }
     int ActiveKey() const;
+    double LiftSec() const;     // P11 + S34: pressure look-back window (noon = 0.15 s)
+    float EffPress(int i) const; // max(now, pressure LiftSec() ago): finger lifts aren't heard
     int PadSemis(int pad) const;
 
 private:
@@ -82,8 +84,13 @@ private:
     int stack_[kStack]; int stackN_ = 0;
     int lastKey_ = 3, latchedKey_ = -1;
     double now_ = 0, padDownAt_[12], comboAt_ = -1;
-    float pressPeak_[12], heldPress_[12]; // recent peak while touched; pressure kept after release
-    double pressPeakAt_[12];
+    // pressure look-back (see EffPress): history sampled every 10 ms, > 0.75 s
+    static constexpr int kPressHist = 96;
+    float pHistV_[12][kPressHist], heldPress_[12];
+    double pHistT_[12][kPressHist], pHistLast_[12];
+    int pHistW_[12];
+    void pressRecord(int i, float v);
+    float pressAgo(int i, double tau) const;
     bool recalDone_ = false;
     uint8_t consumed_[12];
     double taps_[4]; int tapN_ = 0;

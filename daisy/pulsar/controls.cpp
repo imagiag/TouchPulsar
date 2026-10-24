@@ -25,9 +25,9 @@ static const int kCcMap[16][3] = {
     {77, 0, 0}, {74, 0, 1}, {71, 0, 2}, {75, 0, 3}, {76, 0, 4}, {85, 0, 5}, {7, 0, 6}, {5, 0, 7},
     {78, 1, 0}, {79, 1, 1}, {80, 1, 2}, {81, 1, 3}, {72, 1, 4}, {82, 1, 5}, {83, 1, 6}, {84, 1, 7},
 };
-enum { CC_CUTOFF = 102, CC_RES = 103, CC_IN_GAIN = 104, CC_MOTION = 105, CC_MOD = 1, CC_SUSTAIN = 64, CC_RANGE = 86, CC_MASKMODE = 87, CC_BEND_RANGE = 88, CC_ROOT_FROM_MIDI = 89 };
+enum { CC_CUTOFF = 102, CC_RES = 103, CC_IN_GAIN = 104, CC_MOTION = 105, CC_LIFT = 106, CC_MOD = 1, CC_SUSTAIN = 64, CC_RANGE = 86, CC_MASKMODE = 87, CC_BEND_RANGE = 88, CC_ROOT_FROM_MIDI = 89 };
 static constexpr float kLegatoGlideSec = 0.06f;
-static constexpr double kPressPeakSec = 0.15; // on release, keep the highest pressure of this last window
+static constexpr double kPressHistDt = 0.01;
 static constexpr double kHoldSec = 0.4, kLatchMaxSec = 1.0, kRecalSec = 1.5;
 
 static inline float pcExp(float v, float lo, float hi) { return lo * powf(hi / lo, v); }
@@ -39,10 +39,12 @@ Controls::Controls() {
     for (int i = 0; i < K_COUNT; i++) { knob[i] = k[i]; alt[i] = a[i]; ch[i] = 0.f; }
     ch[K_FUND] = 1.f;   // filter fully open
     ch[K_MASK] = 0.5f;  // input gain 0 dB
+    ch[K_WINDOW] = 0.5f; // lift window 0.15 s
     sw[0] = sw[1] = 0;
     for (int i = 0; i < 12; i++) {
         touched[i] = 0; pressure[i] = 0.f; padDownAt_[i] = 0; consumed_[i] = 0;
-        pressPeak_[i] = 0.f; pressPeakAt_[i] = 0; heldPress_[i] = 0.6f;
+        heldPress_[i] = 0.6f; pHistW_[i] = 0; pHistLast_[i] = -1e9;
+        for (int k = 0; k < kPressHist; k++) { pHistV_[i][k] = 0.f; pHistT_[i][k] = -1e9; }
     }
     for (int i = 0; i < 128; i++) { midiVel_[i] = 0.f; midiAT_[i] = 0.f; }
 }
@@ -103,7 +105,8 @@ void Controls::setRoot(int semis) {
 // ---- pads ----
 void Controls::PadDown(int i, float pr) {
     touched[i] = 1; pressure[i] = pr; padDownAt_[i] = now_; consumed_[i] = 0;
-    pressPeak_[i] = pr; pressPeakAt_[i] = now_;
+    for (int k = 0; k < kPressHist; k++) { pHistV_[i][k] = 0.f; pHistT_[i][k] = -1e9; }
+    pHistLast_[i] = -1e9; pressRecord(i, pr);
     const bool to = touched[P_TO], ch = touched[P_CH];
 
     if ((i == P_TO && ch) || (i == P_CH && to)) { // TO + CH: tap = hold (latch), long = recalibrate
@@ -140,17 +143,34 @@ void Controls::PadDown(int i, float pr) {
     if (i >= 3 && i <= 9) push(i);
 }
 
-// recent peak: follows rises at once, follows falls only after kPressPeakSec
 void Controls::PadMove(int i, float pr) {
     if (!touched[i]) return;
     pressure[i] = pr;
-    if (pr >= pressPeak_[i] || now_ - pressPeakAt_[i] > kPressPeakSec) { pressPeak_[i] = pr; pressPeakAt_[i] = now_; }
+    pressRecord(i, pr);
 }
+
+// ---- pressure look-back: the sound uses max(now, value LiftSec() ago), so a finger lift
+// shorter than the window is never heard, and a released pad keeps its pre-lift pressure.
+double Controls::LiftSec() const { return (double)(0.03f * powf(25.f, ch[K_WINDOW])); } // 0.03 .. 0.75 s
+void Controls::pressRecord(int i, float v) {
+    if (now_ - pHistLast_[i] < kPressHistDt) return;
+    pHistV_[i][pHistW_[i]] = v; pHistT_[i][pHistW_[i]] = now_;
+    pHistW_[i] = (pHistW_[i] + 1) % kPressHist; pHistLast_[i] = now_;
+}
+float Controls::pressAgo(int i, double tau) const { // newest sample at least tau old
+    const double target = now_ - tau;
+    for (int k = 1; k <= kPressHist; k++) {
+        const int idx = (pHistW_[i] - k + kPressHist) % kPressHist;
+        if (pHistT_[i][idx] <= target) return pHistV_[i][idx];
+    }
+    return 0.f;
+}
+float Controls::EffPress(int i) const { return fmaxf(pressure[i], pressAgo(i, LiftSec())); }
 
 void Controls::PadUp(int i) {
     if (!touched[i]) return;
     touched[i] = 0;
-    heldPress_[i] = now_ - pressPeakAt_[i] <= kPressPeakSec ? pressPeak_[i] : pressure[i];
+    heldPress_[i] = EffPress(i);
     const double held = now_ - padDownAt_[i];
     if ((i == P_TO || i == P_CH) && comboAt_ >= 0) {
         if (!recalDone_ && now_ - comboAt_ < kLatchMaxSec) toggleLatch();
@@ -219,7 +239,8 @@ void Controls::cc(int c, int v) {
     const float x = v / 127.f;
     for (int i = 0; i < 16; i++)
         if (kCcMap[i][0] == c) { (kCcMap[i][1] ? alt : knob)[kCcMap[i][2]] = x; return; }
-    if (c == CC_MOTION) ch[K_SPREAD] = x;
+    if (c == CC_LIFT) ch[K_WINDOW] = x;
+    else if (c == CC_MOTION) ch[K_SPREAD] = x;
     else if (c == CC_IN_GAIN) ch[K_MASK] = x;
     else if (c == CC_CUTOFF) ch[K_FUND] = x;
     else if (c == CC_RES) ch[K_LEVEL] = x;
@@ -274,7 +295,7 @@ void Controls::Compute(Params& out) const {
     const float bpm = Bpm(), bendMul = powf(2.f, bend_ * bendRange / 12.f);
 
     // released notes (hold, or the release tail) keep the pressure they had when let go
-    const float press = isMidi ? fmaxf(midiAT_[n], chanAT_) : (touched[src] ? pressure[src] : heldPress_[src]);
+    const float press = isMidi ? fmaxf(midiAT_[n], chanAT_) : (touched[src] ? EffPress(src) : heldPress_[src]);
     float gate = 0.f;
     if (key >= 0 && isMidi) gate = fminf(1.f, (0.3f + 0.7f * midiVel_[n]) * (0.85f + 0.3f * press));
     else if (key >= 0) gate = 0.55f + 0.45f * press;

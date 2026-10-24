@@ -219,7 +219,13 @@ c.cc(84, 0); eq(c.compute(new PulsarParams()).chorus, 0, 'CC84 = chorus');
   // a slow, deliberate softening is followed (peak expires after 0.15 s)
   const c = new PulsarControls(); c.tick(1); c.toggleLatch(); c.padDown(5, 0.9);
   for (let k = 1; k <= 10; k++) { c.tick(1 + k * 0.1); c.padMove(5, 0.9 - k * 0.06); }
-  c.padUp(5); near(c.compute(new PulsarParams()).gate, 0.55 + 0.45 * 0.3, 0.03, 'slow softening is followed');
+  c.padUp(5); const pr = (c.compute(new PulsarParams()).gate - 0.55) / 0.45;
+  assert(pr > 0.3 && pr < 0.46, 'slow softening is followed, one window behind: ' + pr); pass++;
+  // the lift window is on P11 + S34: noon = 0.15 s, CC106
+  near(new PulsarControls().liftSec(), 0.15, 1e-9, 'lift window 0.15 s at noon');
+  const lc = new PulsarControls(); lc.padDown(PC.P_CH, .7); lc.turn(PC.K_WINDOW, 1); lc.padUp(PC.P_CH);
+  near(lc.liftSec(), 0.75, 1e-9, 'P11 + S34 = lift window'); eq(lc.knob[PC.K_WINDOW], 0, 'window knob untouched');
+  lc.cc(106, 0); near(lc.liftSec(), 0.03, 1e-9, 'CC106 = lift window');
 }
 
 // --- hold (latch) on short P10+P11, recalibrate on long ---
