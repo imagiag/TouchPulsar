@@ -110,6 +110,13 @@ Plan for when the Touch version moves into a module (noted 2026-10-24; not start
 - Still unused: P11 + S31, S32. (P11 + S33 = Attack since v9.)
 
 ### Ideas
+- **Delay + reverb** (noted 2026-10-24; not built). Estimates on Daisy:
+  - **Stereo delay**: up to 2 s, feedback, darkening filter, ping-pong. Time follows tap tempo (e.g. dotted 1/8); one knob for feedback + mix. < 1% CPU, 768 KB SDRAM, ~1 KB flash.
+  - **Reverb**: our own Dattorro-style plate (~5–8% CPU, ~40–60 KB RAM, ~2–3 KB flash), or DaisySP ReverbSc as in TouchString (~10–15% CPU, ~100 KB, needs the LGPL DaisySP library linked).
+  - **Controls**: P11 + S31 = delay amount, P11 + S32 = reverb amount. Lift (P11 + S34) can be reclaimed for a delay time or reverb damping if needed.
+  - **Flash**: 91.8% used (~10.5 KB free). Delay + own plate fits; after that, move to the Daisy bootloader.
+  - **First**: measure real CPU with a `DEBUG=1` build (USB serial) before adding the reverb.
+  - The plain synced delay overlaps partly with *pulsar echo* (live input step 2), whose echo taps follow the masked pulse pattern. Keep that as a separate mode.
 - Polyphony: the paper's pulsar generator is monophonic. A paraphonic mode (each pad gets its own f<sub>p</sub>, sharing formant settings) is possible but multiplies voices by 7.
 - **Done (v5): Formant motion**: per-formant spatial paths (§3.1), P11 + S30 (CC 105): each formant has its own stereo LFO (0.05–3 Hz, speed ratios 1 : 1.37 : 1.73), applied per pulsar at emission. Width unchanged.
 - More shapes or windows: the bipolar ring-modulator envelope (Fig. 3h) and user tables drawn on the iPad.
