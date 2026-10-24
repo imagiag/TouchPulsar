@@ -37,7 +37,7 @@ Every version is kept in `releases/` with a name saying what changed, so you can
   - P11 + right fader (S37) - **Filter cutoff** (30 Hz–18 kHz; fully up = open)
   - P11 + left fader (S36) - **Filter resonance**
   - P11 + S30 - **Formant motion**: each formant drifts around the stereo field at its own speed (fully left = still, up to ~3 Hz)
-  - P11 + S34 - **Lift** (tuning): pressure look-back window, noon = 0.15 s (0.03–0.75 s). Longer hides slower finger lifts but responds later to softening
+  - P11 + S34 - **Lift** (tuning; works as-is at noon, may be reassigned later): pressure look-back window, noon = 0.15 s (0.03–0.75 s). Longer hides slower finger lifts but responds later to softening
   - P11 + S35 - **Input gain** (−12 to +12 dB, centre = 0 dB) for the live input; while P11 is held the LED shows the input level
 - **P10 + P11 (TO + CH)**:
   - Quick tap both - **Hold** (latch) on / off: the last note keeps sounding hands-free (2 blinks = on, 1 blink = off)

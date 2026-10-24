@@ -103,6 +103,12 @@ Plan for when the Touch version moves into a module (noted 2026-10-24; not start
 - **Live input, step 2 — pulsar echo**: live convolution of the input with the pulse train = a multi-tap delay with one tap per recent pulse (2 s SDRAM ring buffer, ~12 taps), so masking shapes the echo pattern. P01 tap would cycle off → sample conv → live echo. Not built yet.
 - **Live input, step 3 — input as controller**: envelope follower → gate/pressure, transient detection → trigger pulses. Not built yet.
 
+- **Done (v8): Lift window** for pad pressure (look-back max) removed the release dip. Tested on hardware at the default (noon = 0.15 s); no adjustment needed.
+
+### Free / reclaimable controls
+- **P11 + S34 (Lift, CC 106)** is a tuning control only: it works fine at noon. **Reclaim it first** when we run out of combos, and fix the window at 0.15 s.
+- Still unused: P11 + S31, S32, S33.
+
 ### Ideas
 - Polyphony: the paper's pulsar generator is monophonic. A paraphonic mode (each pad gets its own f<sub>p</sub>, sharing formant settings) is possible but multiplies voices by 7.
 - **Done (v5): Formant motion**: per-formant spatial paths (§3.1), P11 + S30 (CC 105): each formant has its own stereo LFO (0.05–3 Hz, speed ratios 1 : 1.37 : 1.73), applied per pulsar at emission. Width unchanged.
