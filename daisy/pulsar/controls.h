@@ -43,6 +43,7 @@ public:
     // state (public, like the JS object; the UI glue reads/writes knob/alt)
     float knob[K_COUNT];
     float alt[K_COUNT];
+    float ch[K_COUNT];      // CH layer (faders only): ch[K_LEVEL] resonance, ch[K_FUND] cutoff
     int sw[2];
     uint8_t touched[12];
     float pressure[12];

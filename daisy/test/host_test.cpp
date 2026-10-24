@@ -61,6 +61,10 @@ static void controlsTests() {
     th.SetSwitch(SW_RANGE, RHYTHM); th.Compute(p); NEAR(p.thick, 0.0, 1e-9, "RHYTHM: no thick");
     th.PadUp(3);
 
+    Controls fl; fl.Compute(p); NEAR(p.cutoffHz, 18000, 0.01, "filter open by default");
+    fl.Midi(0xB0, 102, 0, 0); fl.Midi(0xB0, 103, 127, 0); fl.Compute(p);
+    NEAR(p.cutoffHz, 30, 0.01, "CC102 = cutoff"); NEAR(p.resonance, 1, 1e-6, "CC103 = resonance");
+
     Controls l; l.Tick(10);
     l.PadDown(P_TO, .7f); l.PadDown(P_CH, .7f); l.Tick(10.2); l.PadUp(P_CH); l.PadUp(P_TO);
     CHECK(l.latch, "short TO+CH = hold");
@@ -147,6 +151,11 @@ int main() {
         c.knob[K_FUND] = (float)(t / 4); c.knob[K_SPREAD] = 0.3f;
         const int pad = 3 + ((int)floor(t * 1.5) % 7);
         if (!c.touched[pad]) { for (int i = 3; i < 10; i++) if (c.touched[i]) c.PadUp(i); c.PadDown(pad, 0.7f); }
+    });
+    render("filter", 4, [](Controls& c, double t, int) { // square pulsarets, resonant sweep down and up
+        c.knob[K_SHAPE] = 0.5f; c.knob[K_FORMANT] = 0.6f; c.knob[K_FUND] = 0.f;
+        c.ch[K_FUND] = (float)fabs(1.0 - t / 2.0); c.ch[K_LEVEL] = 0.75f;
+        if (!c.touched[5]) c.PadDown(5, 0.7f);
     });
     render("conv", 3, [](Controls& c, double, int) {
         c.SetSwitch(SW_RANGE, RHYTHM); c.SetSwitch(SW_MASK, 1); c.convOn = true; c.alt[K_MASK] = 1;

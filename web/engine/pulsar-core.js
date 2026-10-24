@@ -52,6 +52,8 @@ function PulsarParams() {
   this.drive = 0;               // 0..1
   this.sync = -1;               // beat counter from MIDI clock; -1 = free running
   this.thick = 0;               // 0..1: detuned second train + stereo spread, sub above 0.6
+  this.cutoffHz = 18000;        // low-pass filter cutoff (fully open by default)
+  this.resonance = 0;           // 0..1
 }
 
 // ---------------------------------------------------------------------------
@@ -99,6 +101,8 @@ function PulsarCore(sampleRate) {
   this.lastSync = -1;
   this.env = 0;
   this.dcxL = 0; this.dcyL = 0; this.dcxR = 0; this.dcyR = 0;
+  this.fcLog = Math.log(18000);  // smoothed filter cutoff (log Hz)
+  this.f1L = 0; this.f2L = 0; this.f1R = 0; this.f2R = 0; // SVF state
   this.recBuf = null;
 }
 
@@ -302,6 +306,13 @@ PulsarCore.prototype.process = function (outL, outR, inMono, n) {
   var subLvl = th > 0.6 ? (th - 0.6) / 0.4 * 0.5 : 0;
   var subT = shapes; // sine table = shape 0
 
+  // Low-pass filter: TPT state-variable filter (stable while sweeping), cutoff smoothed ~5 ms
+  var fcT = Math.log(Math.min(Math.max(p.cutoffHz, 20), 0.45 * sr));
+  this.fcLog += (fcT - this.fcLog) * Math.min(1, n / (0.005 * sr));
+  var fg = Math.tan(Math.PI * Math.exp(this.fcLog) / sr);
+  var fk = 1 / (0.707 + p.resonance * p.resonance * 19.3); // 1/Q, Q 0.7 .. 20
+  var fa1 = 1 / (1 + fg * (fg + fk)), fa2 = fg * fa1, fa3 = fg * fa2;
+
   for (var i = 0; i < n; i++) {
     // ---- fundamental: pulsar emission clock ----
     var finc = inc0 + incStep * i;
@@ -382,6 +393,11 @@ PulsarCore.prototype.process = function (outL, outR, inMono, n) {
     // ---- DC block, drive, level ----
     var yl = L - this.dcxL + 0.9995 * this.dcyL; this.dcxL = L; this.dcyL = yl;
     var yr = R - this.dcxR + 0.9995 * this.dcyR; this.dcxR = R; this.dcyR = yr;
+    // low-pass (before drive, so drive saturates the resonance)
+    var v3 = yl - this.f2L, v1 = fa1 * this.f1L + fa2 * v3, v2 = this.f2L + fa2 * this.f1L + fa3 * v3;
+    this.f1L = 2 * v1 - this.f1L; this.f2L = 2 * v2 - this.f2L; yl = v2;
+    v3 = yr - this.f2R; v1 = fa1 * this.f1R + fa2 * v3; v2 = this.f2R + fa2 * this.f1R + fa3 * v3;
+    this.f1R = 2 * v1 - this.f1R; this.f2R = 2 * v2 - this.f2R; yr = v2;
     outL[i] = Math.tanh(yl * drv * 0.6) * drvN * outG;
     outR[i] = Math.tanh(yr * drv * 0.6) * drvN * outG;
 

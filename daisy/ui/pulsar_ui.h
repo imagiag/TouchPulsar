@@ -65,8 +65,8 @@ private:
     daisy::MidiUsbHandler midi_;   // USB is the debug log port when DEBUG=1 (as in TouchString)
 #endif
 
-    Takeover main_[pulsar::K_COUNT], alt_[pulsar::K_COUNT];
-    float writtenKnob_[pulsar::K_COUNT], writtenAlt_[pulsar::K_COUNT];
+    Takeover main_[pulsar::K_COUNT], alt_[pulsar::K_COUNT], ch_[pulsar::K_COUNT]; // ch_: faders with P11 held
+    float writtenKnob_[pulsar::K_COUNT], writtenAlt_[pulsar::K_COUNT], writtenCh_[pulsar::K_COUNT];
     bool firstRun_ = true;
 
     // time (64-bit microsecond accumulator; System::GetUs wraps after ~71 min)

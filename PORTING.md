@@ -70,6 +70,7 @@ PulsarTouch/
 
 ### Feedback from playing the hardware
 - ~~**Right fader (S37) in TONE**: glide is rarely useful musically.~~ **Done (v2):** S37 in TONE is now **Thick**: a detuned second train (3–25 cents) spread L/R, plus a sub-octave sine above 60%. Glide in TONE is now a fixed 60 ms, on MIDI legato only.
+- **Done (v3): Filter**: P11 + right fader = low-pass cutoff, P11 + left fader = resonance (TPT state-variable filter, 12 dB/oct, before Drive; CC 102/103).
 - **Chorus / ensemble** (option on top of Thick): 2–3 modulated short delays in stereo (~30 ms buffer), for an even lusher sound that also works on the convolved sound. Not built yet. (Noted 2026-10-24.)
 - **Silent recording feedback**: recording with nothing on the input still blinks 3× (the old sample stays). Give silence its own blink pattern (e.g. 1 long blink) so it's clear nothing was captured. (Noted 2026-10-24.)
 - **Live input processing**: the input jack is only used for P01 recording; nothing is heard live. Idea: let the pulsar train gate the incoming audio in real time ("pulsar-masked input": each pulsaret window opens the input, masking applies), mixed by a control. Cheap on Daisy. (Noted 2026-10-24.)

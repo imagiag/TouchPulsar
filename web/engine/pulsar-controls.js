@@ -13,6 +13,7 @@ var PC = {
   KNOB_IDS: ['S30', 'S31', 'S32', 'S33', 'S34', 'S35', 'S36', 'S37'],
   KNOB_NAMES: ['spread', 'formant', 'cluster', 'shape', 'window', 'mask', 'level', 'fund'],
   ALT_NAMES: ['width', 'push', 'edge', 'fold', 'release', 'conv', 'drive', 'tempo'],
+  CH_NAMES: ['', '', '', '', '', '', 'res', 'cutoff'], // P11 (CH) + faders: low-pass filter
   // switches
   SW_RANGE: 0,  // S09/S10 (left):  up TONE · center FREE · down RHYTHM
   SW_MASK: 1,   // S07/S08 (right): up BURST · center CHANNEL · down STOCH
@@ -49,6 +50,7 @@ var PC = {
     [77, 'k', 0], [74, 'k', 1], [71, 'k', 2], [75, 'k', 3], [76, 'k', 4], [85, 'k', 5], [7, 'k', 6], [5, 'k', 7],
     [78, 'a', 0], [79, 'a', 1], [80, 'a', 2], [81, 'a', 3], [72, 'a', 4], [82, 'a', 5], [83, 'a', 6], [84, 'a', 7],
   ],
+  CC_CUTOFF: 102, CC_RES: 103,
   CC_MOD: 1, CC_SUSTAIN: 64, CC_RANGE: 86, CC_MASKMODE: 87, CC_BEND_RANGE: 88, CC_ROOT_FROM_MIDI: 89,
   CC_ALL_OFF: 123,
 };
@@ -56,6 +58,7 @@ var PC = {
 function PulsarControls() {
   this.knob = [0.15, 0.45, 0.0, 0.0, 0.0, 0.0, 0.7, 0.35];
   this.alt = [0.6, 0.35, 0.3, 0.0, 0.3, 0.6, 0.15, 0.25];
+  this.ch = [0, 0, 0, 0, 0, 0, 0, 1]; // CH layer (faders only): [6] resonance, [7] cutoff (open)
   this.sw = [0, 0];
   this.touched = new Uint8Array(12);
   this.pressure = new Float32Array(12);
@@ -112,8 +115,10 @@ PulsarControls.prototype.padSemis = function (pad) {
 };
 
 // Hardware-style knob write: holding P10 (TO) edits the alt layer.
+// Holding P11 (CH) makes the faders edit the filter (S37 cutoff, S36 resonance).
 PulsarControls.prototype.turn = function (i, v) {
   if (this.toHeld()) { this.alt[i] = v; this.modUsed[0] = true; }
+  else if (this.chHeld() && i >= PC.K_LEVEL) { this.ch[i] = v; this.modUsed[1] = true; }
   else this.knob[i] = v;
 };
 PulsarControls.prototype.setSwitch = function (i, pos) { this.sw[i] = pos; };
@@ -271,7 +276,9 @@ PulsarControls.prototype.cc = function (c, v) {
   for (var i = 0; i < m.length; i++) {
     if (m[i][0] === c) { (m[i][1] === 'k' ? this.knob : this.alt)[m[i][2]] = x; return; }
   }
-  if (c === PC.CC_MOD) this.mod = x;
+  if (c === PC.CC_CUTOFF) this.ch[PC.K_FUND] = x;
+  else if (c === PC.CC_RES) this.ch[PC.K_LEVEL] = x;
+  else if (c === PC.CC_MOD) this.mod = x;
   else if (c === PC.CC_SUSTAIN) {
     this.sustain = v >= 64;
     if (!this.sustain) { for (var j = 0; j < this.sustained.length; j++) this._pull(this.sustained[j]); this.sustained.length = 0; }
@@ -397,6 +404,8 @@ PulsarControls.prototype.compute = function (out) {
   out.convMix = this.convOn ? A[PC.K_MASK] : 0;
   out.level = K[PC.K_LEVEL];
   out.drive = A[PC.K_LEVEL];
+  out.cutoffHz = pcExp(this.ch[PC.K_FUND], 30, 18000);
+  out.resonance = this.ch[PC.K_LEVEL];
   return out;
 };
 

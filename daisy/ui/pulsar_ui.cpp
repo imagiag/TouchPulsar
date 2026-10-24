@@ -85,22 +85,31 @@ void PulsarUI::readKnobs() {
     Knobs& k = touch_.knobs();
     AnalogControl* phys[K_COUNT] = {&k.s30(), &k.s31(), &k.s32(), &k.s33(), &k.s34(), &k.s35(), &k.s36(), &k.s37()};
     const bool to = ctl_.ToHeld();
+    const bool chLayer = !to && ctl_.ChHeld(); // P11 + faders = filter (TO wins if both held)
     for (int i = 0; i < K_COUNT; i++) {
         const float v = phys[i]->Process();
+        const bool fader = i >= K_LEVEL;
+        const bool useCh = chLayer && fader;
         if (firstRun_) {
             main_[i].SetTracking(v); ctl_.knob[i] = v;
             alt_[i].Set(ctl_.alt[i]);
-            writtenKnob_[i] = ctl_.knob[i]; writtenAlt_[i] = ctl_.alt[i];
+            ch_[i].Set(ctl_.ch[i]);
+            writtenKnob_[i] = ctl_.knob[i]; writtenAlt_[i] = ctl_.alt[i]; writtenCh_[i] = ctl_.ch[i];
             continue;
         }
         // values changed elsewhere (MIDI CC, tap tempo): hold them until the knob moves
         if (ctl_.knob[i] != writtenKnob_[i]) main_[i].Set(ctl_.knob[i]);
         if (ctl_.alt[i] != writtenAlt_[i]) alt_[i].Set(ctl_.alt[i]);
+        if (ctl_.ch[i] != writtenCh_[i]) ch_[i].Set(ctl_.ch[i]);
 
-        ctl_.knob[i] = main_[i].Process(v, !to);
+        ctl_.knob[i] = main_[i].Process(v, !to && !useCh);
         const float a = alt_[i].Process(v, to);
         if (to && a != ctl_.alt[i]) { ctl_.alt[i] = a; ctl_.modUsed[0] = true; }
-        writtenKnob_[i] = ctl_.knob[i]; writtenAlt_[i] = ctl_.alt[i];
+        if (fader) {
+            const float c = ch_[i].Process(v, useCh);
+            if (useCh && c != ctl_.ch[i]) { ctl_.ch[i] = c; ctl_.modUsed[1] = true; }
+        }
+        writtenKnob_[i] = ctl_.knob[i]; writtenAlt_[i] = ctl_.alt[i]; writtenCh_[i] = ctl_.ch[i];
     }
     firstRun_ = false;
 }

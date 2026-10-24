@@ -34,6 +34,8 @@ Every version is kept in `releases/` with a name saying what changed, so you can
   - P11 + P02 - Next scale (cycles through all 7 scales)
   - P11 + P03...P09 - Direct scale select (P03: Chromatic, P04: Major, P05: Natural Minor, P06: Minor Pentatonic, P07: Major Pentatonic, P08: Dorian, P09: Harmonic Minor)
   - P11 + P01 - Formant Coupled / Free toggle (2 blinks = coupled, 1 blink = free)
+  - P11 + right fader (S37) - **Filter cutoff** (30 Hz–18 kHz; fully up = open)
+  - P11 + left fader (S36) - **Filter resonance**
 - **P10 + P11 (TO + CH)**:
   - Quick tap both - **Hold** (latch) on / off: the last note keeps sounding hands-free (2 blinks = on, 1 blink = off)
   - Hold both for ~1.5 s - Recalibrate the touch pad baselines (3 rapid blinks)
@@ -47,8 +49,8 @@ Every version is kept in `releases/` with a name saying what changed, so you can
 - S35 **Mask** | Removes pulsars from the train. BURST/CHANNEL: burst ratio from 1:0 (no masking) to 1:6 · STOCH: chance each pulsar plays, 100% → 3% | Hold TO: **Conv** (convolution mix)
 
 ### Faders
-- S36 (left) **Level** | Output volume (Hold TO: **Drive** — warm saturation)
-- S37 (right) **Thick / Fund / Glide**, depending on the Range switch (Hold TO: **Tempo**):
+- S36 (left) **Level** | Output volume (Hold TO: **Drive** — warm saturation) (Hold CH: **Resonance**)
+- S37 (right) **Thick / Fund / Glide**, depending on the Range switch (Hold TO: **Tempo**) (Hold CH: **Cutoff**):
   - TONE: **Thick**. Bottom = a single clean train. Pushing up brings in a slightly detuned second train (3 to 25 cents) that beats against the first and spreads the two left/right. Above 60% a sub-octave sine adds weight.
   - FREE: the pulse rate itself, 0.25 Hz–2 kHz. Slide it slowly from bottom to top to hear rhythm turn into tone.
   - RHYTHM: glide between note values (up to 4 s), for accelerando and ritardando.
@@ -69,6 +71,7 @@ Every version is kept in `releases/` with a name saying what changed, so you can
 - **Three Formants**: Spread adds two more formants above the main one, each panned by Width, for vowel-like and choral tones.
 - **Coupled / Free Formant**: Coupled, the formant moves with the note, so the timbre stays the same across the keyboard. Free, it stays fixed in Hz, like a filter while the pitch moves underneath.
 - **Convolution**: Each pulse triggers a copy of the sample filtered by the pulsaret, so the sample is replayed in the pulsar rhythm. Try short percussive sounds in RHYTHM and longer ones in FREE. A wooden knock is built in, and a hold on P01 records your own (input jack, up to 2 s).
+- **Filter**: Hold P11 and move the faders: right = cutoff, left = resonance. It's a smooth 12 dB/oct low-pass on both channels, placed before Drive so Drive saturates the resonance. At power-up it's fully open (no change to the sound).
 - **Thick**: In TONE, the right fader doubles the pulsar train with a detuned copy, like two slightly out-of-tune oscillators: the sound gets wide, chorused and alive, and a sub-octave sine comes in at the top. The copy uses the same formants, shape and masking, so it keeps the pulsar character.
 - **Pressure**: Pressing harder makes a note louder and pushes the formant up (set with Push). Hold keeps the last pressure level.
 - **Soft Takeover**: When you hold P10, or after a MIDI CC changes a value, a knob only takes control once you move it, so values never jump.
@@ -131,6 +134,8 @@ PulsarTouch appears as a USB MIDI device when connected via the Daisy Seed's USB
 | 87 | Right switch **Masking** (0–42 BURST, 43–85 CHANNEL, 86–127 STOCH) |
 | 88 | **Pitch Bend Range** (semitones) |
 | 89 | **Root from MIDI** (≥ 64 on: the lowest held note sets the root key; off by default) |
+| 102 | **Filter Cutoff** (CH + S37) |
+| 103 | **Filter Resonance** (CH + S36) |
 | 120, 123 | All Notes Off |
 
 - **Soft Takeover**: A value set via MIDI CC is kept until the corresponding knob or fader is moved; from then on the physical control takes over again.

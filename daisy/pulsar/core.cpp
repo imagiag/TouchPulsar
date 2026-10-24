@@ -58,6 +58,7 @@ void Core::Init(float sampleRate) {
     trainGain_[0] = 1.f; trainGain_[1] = 0.f; trainPan_[0] = trainPan_[1] = 0.f;
     fundLog_ = logf(110.f); fundPhase_ = 0.0; env_ = 0.f;
     dcxL_ = dcyL_ = dcxR_ = dcyR_ = 0.f;
+    fcLog_ = logf(18000.f); f1L_ = f2L_ = f1R_ = f2R_ = 0.f;
     recBuf_ = nullptr; recCap_ = 0; recPos_ = 0;
 }
 
@@ -271,6 +272,14 @@ void Core::Process(float* outL, float* outR, const float* in, size_t n) {
     const double detMul = (double)powf(2.f, (3.f + 22.f * th) / 1200.f);
     const float subLvl = th > 0.6f ? (th - 0.6f) / 0.4f * 0.5f : 0.f;
 
+    // Low-pass filter: TPT state-variable filter (stable while sweeping), cutoff smoothed ~5 ms
+    const float fcT = logf(fminf(fmaxf(p.cutoffHz, 20.f), 0.45f * sr_));
+    fcLog_ += (fcT - fcLog_) * fminf(1.f, (float)n / (0.005f * sr_));
+    const float fw = kPi * expf(fcLog_) / sr_;
+    const float fg = sinf(fw) / cosf(fw); // tan via sin/cos (already linked) saves ~4 KB of flash
+    const float fk = 1.f / (0.707f + p.resonance * p.resonance * 19.3f); // 1/Q, Q 0.7 .. 20
+    const float fa1 = 1.f / (1.f + fg * (fg + fk)), fa2 = fg * fa1, fa3 = fg * fa2;
+
     for (size_t i = 0; i < n; i++) {
         // ---- fundamental: pulsar emission clock ----
         const double finc = inc0 + incStep * i;
@@ -349,8 +358,14 @@ void Core::Process(float* outL, float* outR, const float* in, size_t n) {
         L *= env_; R *= env_;
 
         // ---- DC block, drive, level ----
-        const float yl = L - dcxL_ + 0.9995f * dcyL_; dcxL_ = L; dcyL_ = yl;
-        const float yr = R - dcxR_ + 0.9995f * dcyR_; dcxR_ = R; dcyR_ = yr;
+        float yl = L - dcxL_ + 0.9995f * dcyL_; dcxL_ = L; dcyL_ = yl;
+        float yr = R - dcxR_ + 0.9995f * dcyR_; dcxR_ = R; dcyR_ = yr;
+        { // low-pass (before drive, so drive saturates the resonance)
+            float v3 = yl - f2L_, v1 = fa1 * f1L_ + fa2 * v3, v2 = f2L_ + fa2 * f1L_ + fa3 * v3;
+            f1L_ = 2.f * v1 - f1L_; f2L_ = 2.f * v2 - f2L_; yl = v2;
+            v3 = yr - f2R_; v1 = fa1 * f1R_ + fa2 * v3; v2 = f2R_ + fa2 * f1R_ + fa3 * v3;
+            f1R_ = 2.f * v1 - f1R_; f2R_ = 2.f * v2 - f2R_; yr = v2;
+        }
         outL[i] = fast_tanh(yl * drv * 0.6f) * drvN * outG;
         outR[i] = fast_tanh(yr * drv * 0.6f) * drvN * outG;
 

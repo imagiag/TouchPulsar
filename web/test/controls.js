@@ -119,6 +119,29 @@ c.setSwitch(PC.SW_RANGE, 2); eq(c.compute(new PulsarParams()).thick, 0, 'RHYTHM:
   assert(core.pulseCountB > 0, 'second train emits'); pass++;
 }
 
+// --- filter on the CH layer (P11 + faders) ---
+c = new PulsarControls();
+p = c.compute(new PulsarParams()); near(p.cutoffHz, 18000, 1e-6, 'filter open by default'); eq(p.resonance, 0, 'no resonance by default');
+c.padDown(PC.P_CH, .7); c.turn(PC.K_FUND, 0.5); c.turn(PC.K_LEVEL, 0.6); c.turn(PC.K_SHAPE, 0.9); c.padUp(PC.P_CH);
+p = c.compute(new PulsarParams());
+near(p.cutoffHz, 30 * Math.sqrt(600), 0.01, 'P11 + right fader = cutoff'); near(p.resonance, 0.6, 1e-9, 'P11 + left fader = resonance');
+eq(c.knob[PC.K_FUND], new PulsarControls().knob[PC.K_FUND], 'right fader main value untouched');
+near(c.knob[PC.K_SHAPE], 0.9, 1e-9, 'knobs with P11 held still edit their main value');
+c.cc(102, 0); c.cc(103, 127); p = c.compute(new PulsarParams());
+near(p.cutoffHz, 30, 1e-6, 'CC102 = cutoff'); near(p.resonance, 1, 1e-9, 'CC103 = resonance');
+{ // engine: low-pass removes highs; full resonance sweep stays stable
+  const hf = (cut, res) => { const core = new PulsarCore(48000), pp = new PulsarParams(), L = new Float32Array(48), R = new Float32Array(48);
+    pp.fundHz = 110; pp.formantHz = [2000, 0, 0]; pp.shape = 3; pp.gate = 1; pp.cutoffHz = cut; pp.resonance = res;
+    let d = 0, e = 0, prev = 0, peak = 0;
+    for (let b = 0; b < 1000; b++) { if (cut < 0) pp.cutoffHz = 30 * Math.pow(600, (b % 250) / 250); core.setParams(pp); core.process(L, R, null, 48);
+      for (let i = 0; i < 48; i++) { assert(isFinite(L[i])); d += (L[i] - prev) ** 2; e += L[i] * L[i]; prev = L[i]; peak = Math.max(peak, Math.abs(L[i])); } }
+    return { ratio: Math.sqrt(d / (e + 1e-12)), peak }; };
+  const open = hf(18000, 0).ratio, closed = hf(300, 0).ratio;
+  assert(closed < open * 0.25, 'cutoff 300 Hz removes highs: ' + closed + ' vs ' + open); pass++;
+  const sweep = hf(-1, 1);
+  assert(sweep.peak <= 1.0001, 'full-resonance sweep stays bounded, peak ' + sweep.peak); pass++;
+}
+
 // --- hold (latch) on short P10+P11, recalibrate on long ---
 c = new PulsarControls(); c.tick(10);
 c.padDown(PC.P_TO, .7); c.padDown(PC.P_CH, .7); c.tick(10.2); c.padUp(PC.P_CH); c.padUp(PC.P_TO);

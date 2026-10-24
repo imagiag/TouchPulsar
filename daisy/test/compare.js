@@ -72,6 +72,11 @@ compare('thick', 4, (c, t) => {
   const pad = 3 + (Math.floor(t * 1.5) % 7);
   if (!c.touched[pad]) { for (let i = 3; i < 10; i++) if (c.touched[i]) c.padUp(i); c.padDown(pad, 0.7); }
 });
+compare('filter', 4, (c, t) => {
+  c.knob[PC.K_SHAPE] = 0.5; c.knob[PC.K_FORMANT] = 0.6; c.knob[PC.K_FUND] = 0;
+  c.ch[PC.K_FUND] = Math.abs(1 - t / 2); c.ch[PC.K_LEVEL] = 0.75;
+  if (!c.touched[5]) c.padDown(5, 0.7);
+});
 compare('conv', 3, (c) => {
   c.setSwitch(PC.SW_RANGE, 2); c.setSwitch(PC.SW_MASK, 1); c.convOn = true; c.alt[PC.K_MASK] = 1;
   c.knob[PC.K_MASK] = 0.1; if (!c.touched[7]) c.padDown(7, 0.7);

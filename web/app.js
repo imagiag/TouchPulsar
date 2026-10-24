@@ -102,11 +102,14 @@ function arc(a0, a1, r) {
 // ------------------------------------------------------------------ input
 const altActive = () => ctl.toHeld();
 
+const chActive = (i) => !altActive() && ctl.chHeld() && i >= PC.K_LEVEL; // P11 + faders = filter
 function writeKnob(i, v) {
   v = clamp(v, 0, 1);
-  if (altActive()) { ctl.alt[i] = v; ctl.modUsed[0] = true; } else ctl.knob[i] = v;
+  if (altActive()) { ctl.alt[i] = v; ctl.modUsed[0] = true; }
+  else if (chActive(i)) { ctl.ch[i] = v; ctl.modUsed[1] = true; }
+  else ctl.knob[i] = v;
 }
-function readKnob(i) { return altActive() ? ctl.alt[i] : ctl.knob[i]; }
+function readKnob(i) { return altActive() ? ctl.alt[i] : chActive(i) ? ctl.ch[i] : ctl.knob[i]; }
 
 function bindDrag(e, i, sens) {
   let startY = 0, startV = 0, id = null, lastTap = 0;
@@ -480,11 +483,12 @@ function updateBoard() {
     e._b.textContent = (alt ? PC.ALT_NAMES : PC.KNOB_NAMES)[i];
     e._s.textContent = knobText(i, alt);
   }
+  board.classList.toggle('ch', chActive(6));
   for (const i of [6, 7]) {
-    const e = faderEls[i], v = readKnob(i);
+    const e = faderEls[i], v = readKnob(i), ch = chActive(i);
     e._fill.style.height = v * 100 + '%'; e._cap.style.bottom = v * 100 + '%';
-    e._b.textContent = alt ? PC.ALT_NAMES[i] : i === 7 ? ['thick', 'fund', 'glide'][ctl.range()] : PC.KNOB_NAMES[i];
-    e._s.textContent = knobText(i, alt);
+    e._b.textContent = alt ? PC.ALT_NAMES[i] : ch ? PC.CH_NAMES[i] : i === 7 ? ['thick', 'fund', 'glide'][ctl.range()] : PC.KNOB_NAMES[i];
+    e._s.textContent = ch ? (i === 7 ? fmtHz(params.cutoffHz) : Math.round(ctl.ch[6] * 100) + '%') : knobText(i, alt);
   }
   swEls.forEach((e, i) => { const pos = ctl.sw[i]; e._lever.style.top = (5 + pos * 32.5) + '%'; e._label.textContent = e._names[pos]; });
 
@@ -505,7 +509,7 @@ function updateBoard() {
     else if (i === 1 && ctl.recording) sub = 'REC';
     if (e._sub.textContent !== sub) e._sub.textContent = sub;
   });
-  $('layerHint').innerHTML = ctl.chHeld() ? '<b>CH layer</b>: P03–P09 pick scale · P00/P02 cycle · P01 formant coupling'
+  $('layerHint').innerHTML = ctl.chHeld() ? '<b style="color:#b48cf0">CH layer</b>: faders = filter cutoff (right) · resonance (left) · P03–P09 pick scale · P00/P02 cycle · P01 formant coupling'
     : alt ? '<b style="color:var(--alt)">TO layer</b>: knobs edit width · push · edge · fold · release · conv · drive · tempo · P03–P09 set root · P00/P02 tempo'
     : 'Hold <b>P10 / Shift</b> for the second knob layer · hold <b>P11 / W</b> for scales · <b>Space</b> = hold';
 }
@@ -596,8 +600,8 @@ $('helpBody').innerHTML = `
 <tr><td>S33</td><td>Shape — sine · tri · saw · square · pulse · vela · noise</td><td>Fold — wavefolder</td></tr>
 <tr><td>S34</td><td>Window — gauss · FOF · expodec · lindec · rect · linatt · expatt</td><td>Release</td></tr>
 <tr><td>S35</td><td>Mask — burst ratio b:r or probability</td><td>Conv — convolution mix</td></tr>
-<tr><td>S36 (L fader)</td><td>Level</td><td>Drive</td></tr>
-<tr><td>S37 (R fader)</td><td>TONE: thick (detuned 2nd train + width, sub above 60%) · FREE: fundamental 0.25 Hz–2 kHz · RHYTHM: glide</td><td>Tempo</td></tr>
+<tr><td>S36 (L fader)</td><td>Level</td><td>Drive · <i>hold P11: filter resonance</i></td></tr>
+<tr><td>S37 (R fader)</td><td>TONE: thick (detuned 2nd train + width, sub above 60%) · FREE: fundamental 0.25 Hz–2 kHz · RHYTHM: glide</td><td>Tempo · <i>hold P11: filter cutoff</i></td></tr>
 <tr><td>S09/10 switch</td><td colspan="2">TONE (pads = notes) · FREE (fader = f<sub>p</sub>, pads = formant notes) · RHYTHM (pads = note values at tempo)</td></tr>
 <tr><td>S07/08 switch</td><td colspan="2">BURST · CHANNEL (bursts left, rests right) · STOCHASTIC</td></tr>
 <tr><td>P03–P09</td><td colspan="2">Notes / subdivisions; position on pad (or Pencil force) = pressure</td></tr>
@@ -619,6 +623,7 @@ $('helpBody').insertAdjacentHTML('beforeend', '<table><tr><th>CC</th><th>Paramet
   `<tr><td>1</td><td>mod wheel → formant</td><td>64</td><td>sustain</td></tr>
    <tr><td>86</td><td>range switch (TONE/FREE/RHYTHM)</td><td>87</td><td>mask switch (BURST/CHAN/STOCH)</td></tr>
    <tr><td>88</td><td>bend range (semitones)</td><td>89</td><td>root from MIDI (≥64 on)</td></tr>
+   <tr><td>102</td><td>filter cutoff (P11 + S37)</td><td>103</td><td>filter resonance (P11 + S36)</td></tr>
    <tr><td>123</td><td>all notes off</td><td></td><td></td></tr></table>`);
 
 buildBoard();

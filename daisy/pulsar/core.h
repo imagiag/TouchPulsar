@@ -47,6 +47,8 @@ struct Params {
     float drive = 0.f;
     int32_t sync = -1;           // beat counter from MIDI clock; -1 = free running
     float thick = 0.f;           // 0..1: detuned second train + stereo spread, sub above 0.6
+    float cutoffHz = 18000.f;    // low-pass filter cutoff (fully open by default)
+    float resonance = 0.f;       // 0..1
 };
 
 class Core {
@@ -126,6 +128,8 @@ private:
     int32_t lastSync_ = -1;
     float env_ = 0.f;
     float dcxL_ = 0.f, dcyL_ = 0.f, dcxR_ = 0.f, dcyR_ = 0.f;
+    float fcLog_ = 9.79813f;     // log(18000): smoothed filter cutoff
+    float f1L_ = 0.f, f2L_ = 0.f, f1R_ = 0.f, f2R_ = 0.f; // SVF state
 
     float* volatile recBuf_ = nullptr;
     size_t recCap_ = 0;
