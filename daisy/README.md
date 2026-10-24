@@ -37,6 +37,7 @@ Every version is kept in `releases/` with a name saying what changed, so you can
   - P11 + right fader (S37) - **Filter cutoff** (30 Hz–18 kHz; fully up = open)
   - P11 + left fader (S36) - **Filter resonance**
   - P11 + S30 - **Formant motion**: each formant drifts around the stereo field at its own speed (fully left = still, up to ~3 Hz)
+  - P11 + S33 - **Attack**: 4 ms (fully left, default) to 3 s, for slow swells. Pairs with Release (P10 + S34)
   - P11 + S34 - **Lift** (tuning; works as-is at noon, may be reassigned later): pressure look-back window, noon = 0.15 s (0.03–0.75 s). Longer hides slower finger lifts but responds later to softening
   - P11 + S35 - **Input gain** (−12 to +12 dB, centre = 0 dB) for the live input; while P11 is held the LED shows the input level
 - **P10 + P11 (TO + CH)**:
@@ -47,7 +48,7 @@ Every version is kept in `releases/` with a name saying what changed, so you can
 - S30 **Spread** | Fades in formants 2 and 3 above the main formant (fully left = single formant) | Hold TO: **Width** (stereo spread of the formants) | Hold CH: **Motion**
 - S31 **Formant** | The resonant peak. Coupled: 1×–32× the pitch. Free: 50 Hz–6.4 kHz | Hold TO: **Push** (how far pad pressure raises the formant, up to +2 octaves)
 - S32 **Cluster** | 1 to 7 cycles of the waveform in each pulsaret: longer, more focused bursts | Hold TO: **Edge** (left half: cut each pulsaret at the next pulse with a 0–6 ms crossfade · right half: let pulsarets overlap)
-- S33 **Shape** | Pulsaret waveform, morphing: sine · triangle · saw · square · pulse · vela · noise · **live input** (fully right) | Hold TO: **Fold** (wavefolder)
+- S33 **Shape** | Pulsaret waveform, morphing: sine · triangle · saw · square · pulse · vela · noise · **live input** (fully right) | Hold TO: **Fold** (wavefolder) | Hold CH: **Attack** (4 ms–3 s)
 - S34 **Window** | Pulsaret envelope, morphing: gauss · FOF · exp decay · linear decay · rectangle · linear attack · exp attack | Hold TO: **Release** (20 ms–4 s) | Hold CH: **Lift** (tuning, noon = 0.15 s)
 - S35 **Mask** | Removes pulsars from the train. BURST/CHANNEL: burst ratio from 1:0 (no masking) to 1:6 · STOCH: chance each pulsar plays, 100% → 3% | Hold TO: **Conv** (convolution mix) | Hold CH: **Input gain**
 
@@ -145,6 +146,7 @@ PulsarTouch appears as a USB MIDI device when connected via the Daisy Seed's USB
 | 104 | **Input Gain** (CH + S35) |
 | 105 | **Formant Motion** (CH + S30) |
 | 106 | **Lift** window (CH + S34) |
+| 107 | **Attack** (CH + S33) |
 | 120, 123 | All Notes Off |
 
 - **Soft Takeover**: A value set via MIDI CC is kept until the corresponding knob or fader is moved; from then on the physical control takes over again.

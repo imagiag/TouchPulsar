@@ -122,11 +122,11 @@ c.setSwitch(PC.SW_RANGE, 2); eq(c.compute(new PulsarParams()).thick, 0, 'RHYTHM:
 // --- filter on the CH layer (P11 + faders) ---
 c = new PulsarControls();
 p = c.compute(new PulsarParams()); near(p.cutoffHz, 18000, 1e-6, 'filter open by default'); eq(p.resonance, 0, 'no resonance by default');
-c.padDown(PC.P_CH, .7); c.turn(PC.K_FUND, 0.5); c.turn(PC.K_LEVEL, 0.6); c.turn(PC.K_SHAPE, 0.9); c.padUp(PC.P_CH);
+c.padDown(PC.P_CH, .7); c.turn(PC.K_FUND, 0.5); c.turn(PC.K_LEVEL, 0.6); c.turn(PC.K_FORMANT, 0.9); c.padUp(PC.P_CH);
 p = c.compute(new PulsarParams());
 near(p.cutoffHz, 30 * Math.sqrt(600), 0.01, 'P11 + right fader = cutoff'); near(p.resonance, 0.6, 1e-9, 'P11 + left fader = resonance');
 eq(c.knob[PC.K_FUND], new PulsarControls().knob[PC.K_FUND], 'right fader main value untouched');
-near(c.knob[PC.K_SHAPE], 0.9, 1e-9, 'knobs with P11 held still edit their main value');
+near(c.knob[PC.K_FORMANT], 0.9, 1e-9, 'knobs without a P11 function still edit their main value');
 c.cc(102, 0); c.cc(103, 127); p = c.compute(new PulsarParams());
 near(p.cutoffHz, 30, 1e-6, 'CC102 = cutoff'); near(p.resonance, 1, 1e-9, 'CC103 = resonance');
 { // engine: low-pass removes highs; full resonance sweep stays stable
@@ -226,6 +226,19 @@ c.cc(84, 0); eq(c.compute(new PulsarParams()).chorus, 0, 'CC84 = chorus');
   const lc = new PulsarControls(); lc.padDown(PC.P_CH, .7); lc.turn(PC.K_WINDOW, 1); lc.padUp(PC.P_CH);
   near(lc.liftSec(), 0.75, 1e-9, 'P11 + S34 = lift window'); eq(lc.knob[PC.K_WINDOW], 0, 'window knob untouched');
   lc.cc(106, 0); near(lc.liftSec(), 0.03, 1e-9, 'CC106 = lift window');
+}
+
+// --- attack on P11 + S33 ---
+c = new PulsarControls(); near(c.compute(new PulsarParams()).attackSec, 0.004, 1e-9, 'attack 4 ms by default');
+c.padDown(PC.P_CH, .7); c.turn(PC.K_SHAPE, 1); c.padUp(PC.P_CH);
+near(c.compute(new PulsarParams()).attackSec, 3, 1e-9, 'P11 + S33 = attack'); eq(c.knob[PC.K_SHAPE], 0, 'shape untouched');
+c.cc(107, 0); near(c.compute(new PulsarParams()).attackSec, 0.004, 1e-9, 'CC107 = attack');
+{ // a slow attack swells: level after 0.1 s is far below a fast one
+  const lvl = (att) => { const core = new PulsarCore(48000), pp = new PulsarParams(), L = new Float32Array(48), R = new Float32Array(48);
+    pp.fundHz = 110; pp.formantHz = [440, 0, 0]; pp.gate = 1; pp.attackSec = att; let e = 0;
+    for (let b = 0; b < 100; b++) { core.setParams(pp); core.process(L, R, null, 48); if (b >= 90) for (let i = 0; i < 48; i++) e += L[i] * L[i]; }
+    return core.env; };
+  assert(lvl(0.004) > 0.95 && lvl(1) < 0.15, 'slow attack swells in'); pass++;
 }
 
 // --- hold (latch) on short P10+P11, recalibrate on long ---

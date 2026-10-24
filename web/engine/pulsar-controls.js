@@ -13,8 +13,8 @@ var PC = {
   KNOB_IDS: ['S30', 'S31', 'S32', 'S33', 'S34', 'S35', 'S36', 'S37'],
   KNOB_NAMES: ['spread', 'formant', 'cluster', 'shape', 'window', 'mask', 'level', 'fund'],
   ALT_NAMES: ['width', 'push', 'edge', 'fold', 'release', 'conv', 'drive', 'chorus'],
-  CH_NAMES: ['motion', '', '', '', 'lift', 'in gain', 'res', 'cutoff'], // P11 (CH) layer: motion, lift window, input gain, filter
-  CH_KNOBS: [0, 4, 5, 6, 7],       // controls with a CH-layer function
+  CH_NAMES: ['motion', '', '', 'attack', 'lift', 'in gain', 'res', 'cutoff'], // P11 (CH) layer: motion, attack, lift window, input gain, filter
+  CH_KNOBS: [0, 3, 4, 5, 6, 7],       // controls with a CH-layer function
   // switches
   SW_RANGE: 0,  // S09/S10 (left):  up TONE · center FREE · down RHYTHM
   SW_MASK: 1,   // S07/S08 (right): up BURST · center CHANNEL · down STOCH
@@ -53,7 +53,7 @@ var PC = {
     [77, 'k', 0], [74, 'k', 1], [71, 'k', 2], [75, 'k', 3], [76, 'k', 4], [85, 'k', 5], [7, 'k', 6], [5, 'k', 7],
     [78, 'a', 0], [79, 'a', 1], [80, 'a', 2], [81, 'a', 3], [72, 'a', 4], [82, 'a', 5], [83, 'a', 6], [84, 'a', 7],
   ],
-  CC_CUTOFF: 102, CC_RES: 103, CC_IN_GAIN: 104, CC_MOTION: 105, CC_LIFT: 106,
+  CC_CUTOFF: 102, CC_RES: 103, CC_IN_GAIN: 104, CC_MOTION: 105, CC_LIFT: 106, CC_ATTACK: 107,
   CC_MOD: 1, CC_SUSTAIN: 64, CC_RANGE: 86, CC_MASKMODE: 87, CC_BEND_RANGE: 88, CC_ROOT_FROM_MIDI: 89,
   CC_ALL_OFF: 123,
 };
@@ -310,7 +310,8 @@ PulsarControls.prototype.cc = function (c, v) {
   for (var i = 0; i < m.length; i++) {
     if (m[i][0] === c) { (m[i][1] === 'k' ? this.knob : this.alt)[m[i][2]] = x; return; }
   }
-  if (c === PC.CC_LIFT) this.ch[PC.K_WINDOW] = x;
+  if (c === PC.CC_ATTACK) this.ch[PC.K_SHAPE] = x;
+  else if (c === PC.CC_LIFT) this.ch[PC.K_WINDOW] = x;
   else if (c === PC.CC_MOTION) this.ch[PC.K_SPREAD] = x;
   else if (c === PC.CC_IN_GAIN) this.ch[PC.K_MASK] = x;
   else if (c === PC.CC_CUTOFF) this.ch[PC.K_FUND] = x;
@@ -434,7 +435,7 @@ PulsarControls.prototype.compute = function (out) {
   out.sync = range === 2 && this.extBpm > 0 && ppb >= 0.999 && Math.abs(ppb - Math.round(ppb)) < 0.01 ? this.sync : -1;
 
   out.gate = gate;
-  out.attackSec = 0.004;
+  out.attackSec = pcExp(this.ch[PC.K_SHAPE], 0.004, 3); // P11 + S33: 4 ms (fully left) .. 3 s
   out.releaseSec = pcExp(A[PC.K_WINDOW], 0.02, 4);
   out.convMix = this.convOn ? A[PC.K_MASK] : 0;
   out.level = K[PC.K_LEVEL];

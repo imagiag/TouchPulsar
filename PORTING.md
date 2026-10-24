@@ -107,7 +107,7 @@ Plan for when the Touch version moves into a module (noted 2026-10-24; not start
 
 ### Free / reclaimable controls
 - **P11 + S34 (Lift, CC 106)** is a tuning control only: it works fine at noon. **Reclaim it first** when we run out of combos, and fix the window at 0.15 s.
-- Still unused: P11 + S31, S32, S33.
+- Still unused: P11 + S31, S32. (P11 + S33 = Attack since v9.)
 
 ### Ideas
 - Polyphony: the paper's pulsar generator is monophonic. A paraphonic mode (each pad gets its own f<sub>p</sub>, sharing formant settings) is possible but multiplies voices by 7.

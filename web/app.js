@@ -444,6 +444,7 @@ function drawSample() {
 }
 
 // ------------------------------------------------------------------ board state -> DOM
+function fmtSec(s) { return s < 1 ? Math.round(s * 1000) + ' ms' : s.toFixed(2) + ' s'; }
 function fmtHz(f) { return f >= 1000 ? (f / 1000).toFixed(2) + ' kHz' : f >= 10 ? f.toFixed(1) + ' Hz' : f.toFixed(2) + ' Hz'; }
 function morphName(v, names) { const a = Math.floor(clamp(v, 0, names.length - 1)), f = v - a;
   return f < 0.15 || a >= names.length - 1 ? names[Math.min(a, names.length - 1)] : f > 0.85 ? names[a + 1] : names[a] + '→' + names[a + 1]; }
@@ -482,7 +483,7 @@ function updateBoard() {
     e._ptr.setAttribute('transform', `rotate(${a})`);
     const ch = chActive(i);
     e._b.textContent = alt ? PC.ALT_NAMES[i] : ch ? PC.CH_NAMES[i] : PC.KNOB_NAMES[i];
-    e._s.textContent = !ch ? knobText(i, alt) : i === 4 ? Math.round(ctl.liftSec() * 1000) + ' ms' : i === 0 ? (ctl.ch[0] < 0.005 ? 'static' : (0.05 * Math.pow(60, ctl.ch[0])).toFixed(2) + ' Hz')
+    e._s.textContent = !ch ? knobText(i, alt) : i === 3 ? fmtSec(params.attackSec) : i === 4 ? Math.round(ctl.liftSec() * 1000) + ' ms' : i === 0 ? (ctl.ch[0] < 0.005 ? 'static' : (0.05 * Math.pow(60, ctl.ch[0])).toFixed(2) + ' Hz')
       : (20 * Math.log10(params.inputGain)).toFixed(1) + ' dB';
     e._val.style.stroke = alt ? 'var(--alt)' : ch ? '#b48cf0' : 'var(--gold)';
   }
@@ -603,7 +604,7 @@ $('helpBody').innerHTML = `
 <tr><td>S30</td><td>Spread — adds formants 2 &amp; 3 above f<sub>d</sub></td><td>Width — formant stereo spread · <i>hold P11: motion (formants drift in stereo)</i></td></tr>
 <tr><td>S31</td><td>Formant f<sub>d</sub> (× f<sub>p</sub> when coupled, Hz when free)</td><td>Push — pad pressure raises formant</td></tr>
 <tr><td>S32</td><td>Cluster — cycles of w per pulsaret (1–7)</td><td>Edge — cut crossfade → overlap (OPulWM)</td></tr>
-<tr><td>S33</td><td>Shape — sine · tri · saw · square · pulse · vela · noise · <b>live input</b></td><td>Fold — wavefolder</td></tr>
+<tr><td>S33</td><td>Shape — sine · tri · saw · square · pulse · vela · noise · <b>live input</b></td><td>Fold — wavefolder · <i>hold P11: attack (4 ms – 3 s)</i></td></tr>
 <tr><td>S34</td><td>Window — gauss · FOF · expodec · lindec · rect · linatt · expatt</td><td>Release · <i>hold P11: lift (pressure look-back, noon = 150 ms)</i></td></tr>
 <tr><td>S35</td><td>Mask — burst ratio b:r or probability</td><td>Conv — convolution mix · <i>hold P11: input gain</i></td></tr>
 <tr><td>S36 (L fader)</td><td>Level</td><td>Drive · <i>hold P11: filter resonance</i></td></tr>
@@ -631,7 +632,7 @@ $('helpBody').insertAdjacentHTML('beforeend', '<table><tr><th>CC</th><th>Paramet
    <tr><td>88</td><td>bend range (semitones)</td><td>89</td><td>root from MIDI (≥64 on)</td></tr>
    <tr><td>102</td><td>filter cutoff (P11 + S37)</td><td>103</td><td>filter resonance (P11 + S36)</td></tr>
    <tr><td>104</td><td>input gain (P11 + S35)</td><td>105</td><td>formant motion (P11 + S30)</td></tr>
-   <tr><td>106</td><td>lift window (P11 + S34)</td><td></td><td></td></tr>
+   <tr><td>106</td><td>lift window (P11 + S34)</td><td>107</td><td>attack (P11 + S33)</td></tr>
    <tr><td>123</td><td>all notes off</td><td></td><td></td></tr></table>`);
 
 buildBoard();

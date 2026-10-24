@@ -88,7 +88,7 @@ void PulsarUI::readKnobs() {
     const bool chLayer = !to && ctl_.ChHeld(); // P11 layer: S30 motion, S35 input gain, faders = filter (TO wins)
     for (int i = 0; i < K_COUNT; i++) {
         const float v = phys[i]->Process();
-        const bool fader = i == K_SPREAD || i == K_WINDOW || i == K_MASK || i >= K_LEVEL; // controls with a CH-layer function (S30, S34, S35, S36, S37)
+        const bool fader = i == K_SPREAD || i == K_SHAPE || i == K_WINDOW || i == K_MASK || i >= K_LEVEL; // controls with a CH-layer function (S30, S33-S37)
         const bool useCh = chLayer && fader;
         if (firstRun_) {
             main_[i].SetTracking(v); ctl_.knob[i] = v;

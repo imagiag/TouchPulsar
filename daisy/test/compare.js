@@ -101,6 +101,11 @@ compare('pressure_hold', 3, (c, t, b) => {
   if (c.touched[6]) c.padMove(6, t < 1.0 ? Math.fround(0.3 + 0.6 * (t - 0.3) / 0.7) : Math.fround(0.9 - (t - 1.0) * 4.0));
   if (t >= 1.2 && c.touched[6]) c.padUp(6);
 });
+compare('attack', 3, (c, t) => {
+  c.ch[PC.K_SHAPE] = 0.75; c.alt[PC.K_WINDOW] = 0.5;
+  if (t < 2.0 && !c.touched[5]) c.padDown(5, 0.7);
+  if (t >= 2.0 && c.touched[5]) c.padUp(5);
+});
 compare('conv', 3, (c) => {
   c.setSwitch(PC.SW_RANGE, 2); c.setSwitch(PC.SW_MASK, 1); c.convOn = true; c.alt[PC.K_MASK] = 1;
   c.knob[PC.K_MASK] = 0.1; if (!c.touched[7]) c.padDown(7, 0.7);

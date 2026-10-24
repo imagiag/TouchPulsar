@@ -194,6 +194,11 @@ int main() {
         if (c.touched[6]) c.PadMove(6, t < 1.0 ? (float)(0.3 + 0.6 * (t - 0.3) / 0.7) : (float)(0.9 - (t - 1.0) * 4.0));
         if (t >= 1.2 && c.touched[6]) c.PadUp(6);
     });
+    render("attack", 3, [](Controls& c, double t, int) { // slow attack swells, then a release
+        c.ch[K_SHAPE] = 0.75f; c.alt[K_WINDOW] = 0.5f;
+        if (t < 2.0 && !c.touched[5]) c.PadDown(5, 0.7f);
+        if (t >= 2.0 && c.touched[5]) c.PadUp(5);
+    });
     render("conv", 3, [](Controls& c, double, int) {
         c.SetSwitch(SW_RANGE, RHYTHM); c.SetSwitch(SW_MASK, 1); c.convOn = true; c.alt[K_MASK] = 1;
         c.knob[K_MASK] = 0.1f; if (!c.touched[7]) c.PadDown(7, 0.7f);
