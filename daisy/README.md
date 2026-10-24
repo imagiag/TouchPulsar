@@ -3,13 +3,13 @@
 Pulsar synthesizer for the Synthux Touch synthesizer and Daisy Seed, based on Curtis Roads' *Sound Composition with Pulsars* (2001). A single control sweeps from rhythm to tone and back. Below about 20 Hz each pulsar is heard as its own beat; above about 40 Hz the beats fuse into a pitched tone with a formant you can sweep like a filter.
 
 ## Quick Install
-Download [PulsarTouch.bin](build/PulsarTouch.bin) and flash it with the [Daisy web programmer](https://flash.daisy.audio/) in Chrome or Edge:
+Download the newest file from [releases/](releases/) (see its README for what each version changes) and flash it with the [Daisy web programmer](https://flash.daisy.audio/) in Chrome or Edge:
 - **Unplugged**: hold BOOT while plugging in USB
 - **Already powered**: hold BOOT, tap RESET, release BOOT
 
 Then **Connect** → *DFU in FS Mode* → choose the file → **Program**. To go back, flash any Synthux firmware the same way.
 
-Earlier versions are kept in `releases/`: `PulsarTouch-v1.bin` (first hardware version) and `PulsarTouch-v2-thick.bin` (adds Thick on the right fader in TONE).
+Every version is kept in `releases/` with a name saying what changed, so you can always flash an older one. `build/PulsarTouch.bin` is a working build and may be newer than any release.
 
 ## Controls
 
