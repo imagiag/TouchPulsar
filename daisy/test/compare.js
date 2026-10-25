@@ -106,6 +106,10 @@ compare('attack', 3, (c, t) => {
   if (t < 2.0 && !c.touched[5]) c.padDown(5, 0.7);
   if (t >= 2.0 && c.touched[5]) c.padUp(5);
 });
+compare('delay', 4, (c) => {
+  c.setSwitch(PC.SW_RANGE, 2); c.tempo = 120; c.knob[PC.K_MASK] = 0.4; c.ch[PC.K_CLUSTER] = 0.7;
+  if (!c.touched[5]) c.padDown(5, 0.8);
+});
 compare('conv', 3, (c) => {
   c.setSwitch(PC.SW_RANGE, 2); c.setSwitch(PC.SW_MASK, 1); c.convOn = true; c.alt[PC.K_MASK] = 1;
   c.knob[PC.K_MASK] = 0.1; if (!c.touched[7]) c.padDown(7, 0.7);

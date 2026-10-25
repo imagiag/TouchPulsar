@@ -56,6 +56,7 @@ void Core::Init(float sampleRate) {
     ringW_ = 0; pulseCount_ = 0; lastSync_ = -1;
     phaseB_ = 0.0; subPhase_ = 0.0; pulseCountB_ = 0;
     trainGain_[0] = 1.f; trainGain_[1] = 0.f; trainPan_[0] = trainPan_[1] = 0.f;
+    dlL_ = dlR_ = nullptr; dlN_ = dlW_ = 0;
     memset(chBufL_, 0, sizeof(chBufL_)); memset(chBufR_, 0, sizeof(chBufR_)); chW_ = 0; chPh_ = 0.0;
     motPh_[0] = 0.f; motPh_[1] = 0.33f; motPh_[2] = 0.67f; motOff_[0] = motOff_[1] = motOff_[2] = 0.f;
     fundLog_ = logf(110.f); fundPhase_ = 0.0; env_ = 0.f;
@@ -286,6 +287,14 @@ void Core::Process(float* outL, float* outR, const float* in, size_t n) {
     const float chBase = 0.010f * sr_, chDepth = (0.0015f + 0.0035f * ca) * sr_;
     const float chK3 = fminf(1.f, fmaxf(0.f, (ca - 0.5f) * 2.f)), chDry = 1.f - 0.35f * ca, chWet = 0.75f * fminf(1.f, ca * 2.f);
 
+    // Ping-pong delay: input -> left line, each line feeds the other (darkened), so echoes
+    // alternate L/R. Time glides (~50 ms) when changed, like tape. Amount 0 = exact bypass.
+    const bool dOn = dlN_ > 0;
+    const double dTarget = dOn ? fmin((double)fmaxf(p.delaySec, 0.01f) * sr_, (double)(dlN_ - 4)) : 0.0;
+    const double dK = 1.0 - (double)expf(-1.f / (0.05f * sr_));
+    const float dLpK = 1.f - expf(-2.f * kPi * 4500.f / sr_);
+    const float dAmt = p.delayAmt, dFb = 0.8f * dAmt, dWet = 0.6f * fminf(1.f, dAmt * 2.f);
+
     // Formant motion: per-formant stereo LFOs (0.05 Hz .. 3 Hz), applied to each pulsar at emission
     static const float kMotRatio[kNForm] = {1.f, 1.37f, 1.73f}, kMotDepth[kNForm] = {0.5f, 0.6f, 0.6f};
     if (p.motion > 0.f) {
@@ -410,6 +419,17 @@ void Core::Process(float* outL, float* outR, const float* in, size_t n) {
             const float wetR = (tB + chK3 * chTap(chBufR_, cw, dC)) / (1.f + chK3);
             oL = oL * chDry + wetL * chWet; oR = oR * chDry + wetR * chWet;
         }
+        // ---- ping-pong delay ----
+        if (dOn) {
+            dlLen_ += (dTarget - dlLen_) * dK;
+            const size_t dw = dlW_;
+            const float rL = dlTap(dlL_, dw, dlLen_, dlN_), rR = dlTap(dlR_, dw, dlLen_, dlN_);
+            dlLpL_ += (rL - dlLpL_) * dLpK; dlLpR_ += (rR - dlLpR_) * dLpK;
+            dlL_[dw] = (oL + oR) * 0.5f + dFb * dlLpR_;
+            dlR_[dw] = dFb * dlLpL_;
+            dlW_ = dw + 1 == dlN_ ? 0 : dw + 1;
+            oL += rL * dWet; oR += rR * dWet;
+        }
         outL[i] = oL * outG;
         outR[i] = oR * outG;
 
@@ -418,6 +438,21 @@ void Core::Process(float* outL, float* outR, const float* in, size_t n) {
         if (rb && in && recPos_ < recCap_) { rb[recPos_] = in[i]; recPos_ = recPos_ + 1; }
     }
     inPeak_ = inPeak;
+}
+
+void Core::SetDelayBuffers(float* l, float* r, size_t len) {
+    if (l && r && len > 8) { memset(l, 0, len * sizeof(float)); memset(r, 0, len * sizeof(float)); }
+    dlL_ = l; dlR_ = r; dlN_ = (l && r && len > 8) ? len : 0;
+    dlW_ = 0; dlLen_ = 0.5 * sr_; dlLpL_ = dlLpR_ = 0.f;
+}
+
+float Core::dlTap(const float* buf, size_t w, double d, size_t n) {
+    double pos = (double)w - d;
+    if (pos < 0) pos += (double)n;
+    const size_t pi = (size_t)pos;
+    const float f = (float)(pos - (double)pi);
+    const size_t pj = pi + 1 == n ? 0 : pi + 1;
+    return buf[pi] + (buf[pj] - buf[pi]) * f;
 }
 
 // sine LFO from the wavetable (same lookup as the JS engine)

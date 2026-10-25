@@ -15,7 +15,8 @@ static const int kScales[Controls::kNumScales][7] = {
     {0, 2, 3, 5, 7, 9, 10},      // Dorian
     {0, 2, 3, 5, 7, 8, 11},      // Harmonic minor
 };
-static const int kSubdiv[7] = {1, 2, 3, 4, 5, 6, 8};               // pulses per beat (Fig. 5)
+static const int kSubdiv[7] = {1, 2, 3, 4, 5, 6, 8};
+static const float kDelayBeats[8] = {0.25f, 1.f / 3.f, 0.5f, 0.75f, 2.f / 3.f, 1.f, 1.5f, 2.f}; // 1/16 .. 1/2               // pulses per beat (Fig. 5)
 static const int kPcToSubdiv[12] = {0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6};
 static const int kBursts[][2] = {{1, 0}, {7, 1}, {6, 1}, {5, 1}, {4, 1}, {3, 1}, {5, 2}, {2, 1}, {5, 3}, {3, 2}, {4, 3},
                                  {1, 1}, {3, 4}, {2, 3}, {3, 5}, {1, 2}, {2, 5}, {1, 3}, {1, 4}, {1, 5}, {1, 6}};
@@ -25,7 +26,7 @@ static const int kCcMap[16][3] = {
     {77, 0, 0}, {74, 0, 1}, {71, 0, 2}, {75, 0, 3}, {76, 0, 4}, {85, 0, 5}, {7, 0, 6}, {5, 0, 7},
     {78, 1, 0}, {79, 1, 1}, {80, 1, 2}, {81, 1, 3}, {72, 1, 4}, {82, 1, 5}, {83, 1, 6}, {84, 1, 7},
 };
-enum { CC_CUTOFF = 102, CC_RES = 103, CC_IN_GAIN = 104, CC_MOTION = 105, CC_LIFT = 106, CC_ATTACK = 107, CC_MOD = 1, CC_SUSTAIN = 64, CC_RANGE = 86, CC_MASKMODE = 87, CC_BEND_RANGE = 88, CC_ROOT_FROM_MIDI = 89 };
+enum { CC_CUTOFF = 102, CC_RES = 103, CC_IN_GAIN = 104, CC_MOTION = 105, CC_LIFT = 106, CC_ATTACK = 107, CC_DELAY_TIME = 108, CC_DELAY_AMT = 109, CC_MOD = 1, CC_SUSTAIN = 64, CC_RANGE = 86, CC_MASKMODE = 87, CC_BEND_RANGE = 88, CC_ROOT_FROM_MIDI = 89 };
 static constexpr float kLegatoGlideSec = 0.06f;
 static constexpr double kPressHistDt = 0.01;
 static constexpr double kHoldSec = 0.4, kLatchMaxSec = 1.0, kRecalSec = 1.5;
@@ -40,6 +41,7 @@ Controls::Controls() {
     ch[K_FUND] = 1.f;   // filter fully open
     ch[K_MASK] = 0.5f;  // input gain 0 dB
     ch[K_WINDOW] = 0.5f; // lift window 0.15 s
+    ch[K_FORMANT] = 3.f / 7.f; // delay time 1/8 dotted
     sw[0] = sw[1] = 0;
     for (int i = 0; i < 12; i++) {
         touched[i] = 0; pressure[i] = 0.f; padDownAt_[i] = 0; consumed_[i] = 0;
@@ -177,7 +179,7 @@ void Controls::PadUp(int i) {
         comboAt_ = -1;
     } else if (i == P_TO && !modUsed[0] && held < kHoldSec) tap();
     if (i == P_CONV) {
-        if (recording) { recording = false; ev(EV_REC_STOP, 3); }
+        if (recording) { recording = false; ev(EV_REC_STOP, 0); } // glue reports captured (3 blinks) or silence (1 long)
         else if (!consumed_[i]) { convOn = !convOn; ev(EV_CONV, convOn ? 2 : 1); }
     }
     pull(i);
@@ -239,7 +241,9 @@ void Controls::cc(int c, int v) {
     const float x = v / 127.f;
     for (int i = 0; i < 16; i++)
         if (kCcMap[i][0] == c) { (kCcMap[i][1] ? alt : knob)[kCcMap[i][2]] = x; return; }
-    if (c == CC_ATTACK) ch[K_SHAPE] = x;
+    if (c == CC_DELAY_TIME) ch[K_FORMANT] = x;
+    else if (c == CC_DELAY_AMT) ch[K_CLUSTER] = x;
+    else if (c == CC_ATTACK) ch[K_SHAPE] = x;
     else if (c == CC_LIFT) ch[K_WINDOW] = x;
     else if (c == CC_MOTION) ch[K_SPREAD] = x;
     else if (c == CC_IN_GAIN) ch[K_MASK] = x;
@@ -366,6 +370,8 @@ void Controls::Compute(Params& out) const {
     out.inputGain = pcExp(ch[K_MASK], 0.25f, 4.f); // -12..+12 dB, centre = 0 dB
     out.motion = ch[K_SPREAD];
     out.chorus = alt[K_FUND];
+    out.delaySec = fminf(2.4f, 60.f / bpm * kDelayBeats[(int)lroundf(ch[K_FORMANT] * 7.f)]);
+    out.delayAmt = ch[K_CLUSTER];
 }
 
 } // namespace pulsar

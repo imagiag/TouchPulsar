@@ -43,8 +43,8 @@ The engine has one pulsar generator with three formants, all sharing one f<sub>p
 | Control | Main | Hold **P10 (TO)** |
 |---|---|---|
 | S30 | **Spread**: fades in formants 2 and 3 above f<sub>d</sub> · hold **P11**: **motion** (formants drift in stereo) | **Width**: stereo spread of the formants |
-| S31 | **Formant** f<sub>d</sub>: × f<sub>p</sub> when coupled, Hz when free | **Push**: how far pad pressure raises the formant |
-| S32 | **Cluster**: 1–7 cycles of w per pulsaret | **Edge**: cut crossfade (PulWM) → overlap (OPulWM) |
+| S31 | **Formant** f<sub>d</sub>: × f<sub>p</sub> when coupled, Hz when free · hold **P11**: **delay time** (synced) | **Push**: how far pad pressure raises the formant |
+| S32 | **Cluster**: 1–7 cycles of w per pulsaret · hold **P11**: **delay amount** | **Edge**: cut crossfade (PulWM) → overlap (OPulWM) |
 | S33 | **Shape**: sine · tri · saw · square · pulse · vela · noise · **live input** (fully right: the input jack becomes the pulsaret waveform) | **Fold**: wavefolder |
 | S34 | **Window**: gauss · FOF · expodec · lindec · rect · linatt · expatt | **Release** |
 | S35 | **Mask**: burst ratio b:r, or probability · hold **P11**: **input gain** | **Conv**: convolution mix |
@@ -106,7 +106,7 @@ MIDI notes play **fully chromatic**; the scale only affects the pads. Pads and M
 | 7 | level (S36) | 83 | drive |
 | 5 | thick / fund / glide (S37) | 84 | chorus / ensemble |
 
-Other CCs: 86 range switch (0–42 TONE, 43–85 FREE, 86–127 RHYTHM) · 87 mask switch · 88 bend range · 89 root from MIDI (≥64 = on: the root follows the lowest held note; off by default) · 102 filter cutoff · 103 filter resonance · 104 input gain · 105 formant motion · 120/123 all notes off.
+Other CCs: 86 range switch (0–42 TONE, 43–85 FREE, 86–127 RHYTHM) · 87 mask switch · 88 bend range · 89 root from MIDI (≥64 = on: the root follows the lowest held note; off by default) · 102 filter cutoff · 103 filter resonance · 104 input gain · 105 formant motion · 108 delay time · 109 delay amount · 120/123 all notes off.
 
 In the browser, MIDI uses Web MIDI (Chrome or Edge on a computer; press **Enable MIDI**). Safari, including on iPad, has no Web MIDI, so on iPad MIDI arrives with the native/AUv3 version. See PORTING.md.
 

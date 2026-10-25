@@ -36,6 +36,8 @@ Every version is kept in `releases/` with a name saying what changed, so you can
   - P11 + P01 - Formant Coupled / Free toggle (2 blinks = coupled, 1 blink = free)
   - P11 + right fader (S37) - **Filter cutoff** (30 Hz–18 kHz; fully up = open)
   - P11 + left fader (S36) - **Filter resonance**
+  - P11 + S31 - **Delay time** (synced: 1/16 … 1/2, default 1/8 dotted)
+  - P11 + S32 - **Delay amount** (mix + feedback; fully left = off)
   - P11 + S30 - **Formant motion**: each formant drifts around the stereo field at its own speed (fully left = still, up to ~3 Hz)
   - P11 + S33 - **Attack**: 4 ms (fully left, default) to 3 s, for slow swells. Pairs with Release (P10 + S34)
   - P11 + S34 - **Lift** (tuning; works as-is at noon, may be reassigned later): pressure look-back window, noon = 0.15 s (0.03–0.75 s). Longer hides slower finger lifts but responds later to softening
@@ -46,8 +48,8 @@ Every version is kept in `releases/` with a name saying what changed, so you can
 
 ### Knobs (clockwise)
 - S30 **Spread** | Fades in formants 2 and 3 above the main formant (fully left = single formant) | Hold TO: **Width** (stereo spread of the formants) | Hold CH: **Motion**
-- S31 **Formant** | The resonant peak. Coupled: 1×–32× the pitch. Free: 50 Hz–6.4 kHz | Hold TO: **Push** (how far pad pressure raises the formant, up to +2 octaves)
-- S32 **Cluster** | 1 to 7 cycles of the waveform in each pulsaret: longer, more focused bursts | Hold TO: **Edge** (left half: cut each pulsaret at the next pulse with a 0–6 ms crossfade · right half: let pulsarets overlap)
+- S31 **Formant** | The resonant peak. Coupled: 1×–32× the pitch. Free: 50 Hz–6.4 kHz | Hold TO: **Push** (how far pad pressure raises the formant, up to +2 octaves) | Hold CH: **Delay time**
+- S32 **Cluster** | 1 to 7 cycles of the waveform in each pulsaret: longer, more focused bursts | Hold TO: **Edge** (left half: cut each pulsaret at the next pulse with a 0–6 ms crossfade · right half: let pulsarets overlap) | Hold CH: **Delay amount**
 - S33 **Shape** | Pulsaret waveform, morphing: sine · triangle · saw · square · pulse · vela · noise · **live input** (fully right) | Hold TO: **Fold** (wavefolder) | Hold CH: **Attack** (4 ms–3 s)
 - S34 **Window** | Pulsaret envelope, morphing: gauss · FOF · exp decay · linear decay · rectangle · linear attack · exp attack | Hold TO: **Release** (20 ms–4 s) | Hold CH: **Lift** (tuning, noon = 0.15 s)
 - S35 **Mask** | Removes pulsars from the train. BURST/CHANNEL: burst ratio from 1:0 (no masking) to 1:6 · STOCH: chance each pulsar plays, 100% → 3% | Hold TO: **Conv** (convolution mix) | Hold CH: **Input gain**
@@ -76,6 +78,7 @@ Every version is kept in `releases/` with a name saying what changed, so you can
 - **Coupled / Free Formant**: Coupled, the formant moves with the note, so the timbre stays the same across the keyboard. Free, it stays fixed in Hz, like a filter while the pitch moves underneath.
 - **Convolution**: Each pulse triggers a copy of the sample filtered by the pulsaret, so the sample is replayed in the pulsar rhythm. Try short percussive sounds in RHYTHM and longer ones in FREE. A wooden knock is built in, and a hold on P01 records your own (input jack, up to 2 s).
 - **Live Input**: Turn **Shape fully right** and the audio on the input jack becomes the pulsaret waveform. Each pulse opens a window onto the incoming sound, and every control applies: Window shapes the gate, Formant + Cluster set how long it opens, Mask and the switches chop the pattern, and Fold, Thick, Filter and Drive sit on top. In RHYTHM it's a tempo-synced gate/stutter; in TONE or FREE the fast gating turns into a pitched, ring-mod-like sound played from the pads. A note must be playing (pad, MIDI or Hold) for the input to be heard. Set the level with **P11 + S35**; while P11 is held, the LED lights when the input is loud enough. Careful with a microphone near speakers: it can feed back.
+- **Delay**: Hold P11 and use S31/S32. **S31 = time**, synced to the tempo in 8 steps: 1/16, 1/8T, 1/8, 1/8. (default), 1/4T, 1/4, 1/4., 1/2. It follows tap tempo and MIDI clock and glides like tape when changed. **S32 = amount**: one knob for mix and feedback (0 = off; fully up = long, darkening repeats). The repeats ping-pong between left and right, and the Level fader still controls everything including the tails.
 - **Filter**: Hold P11 and move the faders: right = cutoff, left = resonance. It's a smooth 12 dB/oct low-pass on both channels, placed before Drive so Drive saturates the resonance. At power-up it's fully open (no change to the sound).
 - **Chorus / Ensemble**: Hold P10 and move the right fader. Lower half: a gentle two-voice stereo chorus. Upper half: a third voice fades in for a lush, string-machine ensemble. It sits after Drive, so it widens everything, including Thick, the filter, convolution and live input. Fully down = off.
 - **Thick**: In TONE, the right fader doubles the pulsar train with a detuned copy, like two slightly out-of-tune oscillators: the sound gets wide, chorused and alive, and a sub-octave sine comes in at the top. The copy uses the same formants, shape and masking, so it keeps the pulsar character.
@@ -100,7 +103,7 @@ The onboard LED provides visual feedback:
 - **Root Key**: 1 blink.
 - **Tempo**: A short flash on every P10 tap and on P10 + P00/P02.
 - **Hold / Convolution / Formant Mode**: 2 blinks = on (coupled), 1 blink = off (free).
-- **Recording**: Fast flashing while P01 records; 3 blinks when the sample is captured.
+- **Recording**: Fast flashing while P01 records; 3 blinks when the sample is captured; **1 long blink** if only silence was recorded (the old sample stays).
 - **Input Level**: While P11 is held, the LED lights when the input signal is above about −26 dB, to help set P11 + S35.
 - **Recalibration**: 3 rapid blinks confirm the touch sensor baseline reset.
 
@@ -147,6 +150,8 @@ PulsarTouch appears as a USB MIDI device when connected via the Daisy Seed's USB
 | 105 | **Formant Motion** (CH + S30) |
 | 106 | **Lift** window (CH + S34) |
 | 107 | **Attack** (CH + S33) |
+| 108 | **Delay Time** (CH + S31) |
+| 109 | **Delay Amount** (CH + S32) |
 | 120, 123 | All Notes Off |
 
 - **Soft Takeover**: A value set via MIDI CC is kept until the corresponding knob or fader is moved; from then on the physical control takes over again.

@@ -202,7 +202,11 @@ function onWorklet(e) {
     }
     if (pulses.length > 6000) pulses.splice(0, pulses.length - 6000);
   } else if (m.type === 'rec') {
-    if (m.data.length > 256) setSample(m.data, ctx.sampleRate, 'recorded');
+    let pk = 0; for (let i = 0; i < m.data.length; i++) pk = Math.max(pk, Math.abs(m.data[i]));
+    if (m.data.length > 256 && pk > 1e-3) {
+      for (let i = 0; i < m.data.length; i++) m.data[i] /= pk;
+      setSample(m.data, ctx.sampleRate, 'recorded'); blink.until = performance.now() / 1000 + 3 * 0.24;
+    } else { toast('Nothing recorded (silence) — sample unchanged'); blink.until = performance.now() / 1000 + 0.6; }
   }
 }
 
@@ -483,7 +487,8 @@ function updateBoard() {
     e._ptr.setAttribute('transform', `rotate(${a})`);
     const ch = chActive(i);
     e._b.textContent = alt ? PC.ALT_NAMES[i] : ch ? PC.CH_NAMES[i] : PC.KNOB_NAMES[i];
-    e._s.textContent = !ch ? knobText(i, alt) : i === 3 ? fmtSec(params.attackSec) : i === 4 ? Math.round(ctl.liftSec() * 1000) + ' ms' : i === 0 ? (ctl.ch[0] < 0.005 ? 'static' : (0.05 * Math.pow(60, ctl.ch[0])).toFixed(2) + ' Hz')
+    e._s.textContent = !ch ? knobText(i, alt) : i === 1 ? PC.DELAY_NAMES[ctl.delayStep()] + ' · ' + fmtSec(params.delaySec)
+      : i === 2 ? (ctl.ch[2] < 0.005 ? 'off' : Math.round(ctl.ch[2] * 100) + '%') : i === 3 ? fmtSec(params.attackSec) : i === 4 ? Math.round(ctl.liftSec() * 1000) + ' ms' : i === 0 ? (ctl.ch[0] < 0.005 ? 'static' : (0.05 * Math.pow(60, ctl.ch[0])).toFixed(2) + ' Hz')
       : (20 * Math.log10(params.inputGain)).toFixed(1) + ' dB';
     e._val.style.stroke = alt ? 'var(--alt)' : ch ? '#b48cf0' : 'var(--gold)';
   }
@@ -555,7 +560,7 @@ function frame(ts) {
     if (ev.type === 'rec-start') {
       if (!micStream) toast('Enable input first (Convolution card)');
       if (node) node.port.postMessage({ type: 'rec', on: true, seconds: 2 });
-    } else if (ev.type === 'rec-stop' && node) node.port.postMessage({ type: 'rec', on: false });
+    } else if (ev.type === 'rec-stop') { blink.until = 0; if (node) node.port.postMessage({ type: 'rec', on: false }); }
   }
   if (node) {
     const s = JSON.stringify(params);
@@ -602,8 +607,8 @@ $('helpBody').innerHTML = `
 <table>
 <tr><th>Control</th><th>Main</th><th>Hold P10 (TO) / Shift</th></tr>
 <tr><td>S30</td><td>Spread — adds formants 2 &amp; 3 above f<sub>d</sub></td><td>Width — formant stereo spread · <i>hold P11: motion (formants drift in stereo)</i></td></tr>
-<tr><td>S31</td><td>Formant f<sub>d</sub> (× f<sub>p</sub> when coupled, Hz when free)</td><td>Push — pad pressure raises formant</td></tr>
-<tr><td>S32</td><td>Cluster — cycles of w per pulsaret (1–7)</td><td>Edge — cut crossfade → overlap (OPulWM)</td></tr>
+<tr><td>S31</td><td>Formant f<sub>d</sub> (× f<sub>p</sub> when coupled, Hz when free)</td><td>Push — pad pressure raises formant · <i>hold P11: delay time (1/16 … 1/2, synced)</i></td></tr>
+<tr><td>S32</td><td>Cluster — cycles of w per pulsaret (1–7)</td><td>Edge — cut crossfade → overlap (OPulWM) · <i>hold P11: delay amount (mix + feedback)</i></td></tr>
 <tr><td>S33</td><td>Shape — sine · tri · saw · square · pulse · vela · noise · <b>live input</b></td><td>Fold — wavefolder · <i>hold P11: attack (4 ms – 3 s)</i></td></tr>
 <tr><td>S34</td><td>Window — gauss · FOF · expodec · lindec · rect · linatt · expatt</td><td>Release · <i>hold P11: lift (pressure look-back, noon = 150 ms)</i></td></tr>
 <tr><td>S35</td><td>Mask — burst ratio b:r or probability</td><td>Conv — convolution mix · <i>hold P11: input gain</i></td></tr>
@@ -633,6 +638,7 @@ $('helpBody').insertAdjacentHTML('beforeend', '<table><tr><th>CC</th><th>Paramet
    <tr><td>102</td><td>filter cutoff (P11 + S37)</td><td>103</td><td>filter resonance (P11 + S36)</td></tr>
    <tr><td>104</td><td>input gain (P11 + S35)</td><td>105</td><td>formant motion (P11 + S30)</td></tr>
    <tr><td>106</td><td>lift window (P11 + S34)</td><td>107</td><td>attack (P11 + S33)</td></tr>
+   <tr><td>108</td><td>delay time (P11 + S31)</td><td>109</td><td>delay amount (P11 + S32)</td></tr>
    <tr><td>123</td><td>all notes off</td><td></td><td></td></tr></table>`);
 
 buildBoard();

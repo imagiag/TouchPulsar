@@ -20,6 +20,9 @@ static float DSY_SDRAM_BSS sampleA[kSampleCap];
 static float DSY_SDRAM_BSS sampleB[kSampleCap];
 static float DSY_SDRAM_BSS kernelA[kKernelCap];
 static float DSY_SDRAM_BSS kernelB[kKernelCap];
+static constexpr size_t kDelayCap = 48000 * 5 / 2;               // 2.5 s ping-pong delay
+static float DSY_SDRAM_BSS delayL[kDelayCap];
+static float DSY_SDRAM_BSS delayR[kDelayCap];
 
 DaisySeed hw;
 Touch touch;
@@ -54,6 +57,7 @@ int main(void) {
     for (int i = 0; i < 40; i++) { touch.Process(); System::Delay(3); } // let MPR121 baselines settle
 
     engine.Init(hw.AudioSampleRate());
+    engine.SetDelayBuffers(delayL, delayR, kDelayCap);
     ui.Init(hw, sampleA, sampleB, kSampleCap, kernelA, kernelB, kKernelCap);
     hw.StartAudio(AudioCallback);
 

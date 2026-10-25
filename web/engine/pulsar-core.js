@@ -23,6 +23,7 @@ var PS = {
   RING: 256,          // pulse event ring for UI (LED / pulse strip)
   SHAPE_NAMES: ['sine', 'triangle', 'saw', 'square', 'pulse', 'vela', 'noise', 'input'],
   CHORUS_BUF: 2048,   // chorus delay line (power of two, > 25 ms at 48 kHz)
+  DELAY_MAX_SEC: 2.5, // ping-pong delay line length
   MOTION_RATIO: [1, 1.37, 1.73], // formant motion: per-formant LFO speed ratios
   MOTION_DEPTH: [0.5, 0.6, 0.6],  // and pan depths (main formant drifts less)
   SHAPE_INPUT: 7,     // shape position 7 = live input as the pulsaret waveform (no table)
@@ -58,6 +59,8 @@ function PulsarParams() {
   this.thick = 0;               // 0..1: detuned second train + stereo spread, sub above 0.6
   this.inputGain = 1;           // live input level (shape 7)
   this.chorus = 0;              // 0..1 chorus (lower half) -> ensemble (upper half)
+  this.delaySec = 0.5;          // delay time (controls sync it to the tempo)
+  this.delayAmt = 0;            // 0..1 delay mix + feedback (0 = off)
   this.motion = 0;              // 0..1 formant motion: each formant drifts in stereo (§3.1 spatial paths)
   this.cutoffHz = 18000;        // low-pass filter cutoff (fully open by default)
   this.resonance = 0;           // 0..1
@@ -108,6 +111,7 @@ function PulsarCore(sampleRate) {
   this.motPh = [0, 0.33, 0.67]; this.motOff = [0, 0, 0]; // formant motion LFOs
   this.chBufL = new Float32Array(PS.CHORUS_BUF); this.chBufR = new Float32Array(PS.CHORUS_BUF); // chorus delay lines
   this.chW = 0; this.chPh = 0;
+  this.setDelayBuffers(new Float32Array(Math.ceil(sampleRate * PS.DELAY_MAX_SEC) + 4), new Float32Array(Math.ceil(sampleRate * PS.DELAY_MAX_SEC) + 4));
   this.lastSync = -1;
   this.env = 0;
   this.dcxL = 0; this.dcyL = 0; this.dcxR = 0; this.dcyR = 0;
@@ -328,6 +332,13 @@ PulsarCore.prototype.process = function (outL, outR, inMono, n) {
   var chK3 = Math.max(0, Math.min(1, (ca - 0.5) * 2)), chDry = 1 - 0.35 * ca, chWet = 0.75 * Math.min(1, ca * 2);
   var chMask = PS.CHORUS_BUF - 1, bufL = this.chBufL, bufR = this.chBufR;
 
+  // Ping-pong delay: input -> left line, each line feeds the other (darkened), so echoes
+  // alternate L/R. Time glides (~50 ms) when changed, like tape. Amount 0 = exact bypass.
+  var dlL = this.dlL, dlR = this.dlR, dlN = this.dlN, dOn = dlN > 0;
+  var dTarget = Math.min(Math.max(p.delaySec, 0.01) * sr, dlN - 4);
+  var dK = 1 - Math.exp(-1 / (0.05 * sr)), dLpK = 1 - Math.exp(-2 * Math.PI * 4500 / sr);
+  var dAmt = p.delayAmt, dFb = 0.8 * dAmt, dWet = 0.6 * Math.min(1, dAmt * 2);
+
   // Formant motion: per-formant stereo LFOs (0.05 Hz .. 3 Hz), applied to each pulsar at emission
   var mo = p.motion;
   if (mo > 0) {
@@ -448,6 +459,17 @@ PulsarCore.prototype.process = function (outL, outR, inMono, n) {
       var wetR = (tB + chK3 * this._chTap(bufR, cw, dC, chMask)) / (1 + chK3);
       oL = oL * chDry + wetL * chWet; oR = oR * chDry + wetR * chWet;
     }
+    // ---- ping-pong delay ----
+    if (dOn) {
+      this.dlLen += (dTarget - this.dlLen) * dK;
+      var dw = this.dlW;
+      var rL = this._dlTap(dlL, dw, this.dlLen, dlN), rR = this._dlTap(dlR, dw, this.dlLen, dlN);
+      this.dlLpL += (rL - this.dlLpL) * dLpK; this.dlLpR += (rR - this.dlLpR) * dLpK;
+      dlL[dw] = (oL + oR) * 0.5 + dFb * this.dlLpR;
+      dlR[dw] = dFb * this.dlLpL;
+      this.dlW = dw + 1 === dlN ? 0 : dw + 1;
+      oL += rL * dWet; oR += rR * dWet;
+    }
     outL[i] = oL * outG;
     outR[i] = oR * outG;
 
@@ -465,6 +487,18 @@ PulsarCore.prototype._lfo = function (ph) {
   return t[xi] + (t[xi + 1] - t[xi]) * (x - xi);
 };
 // read a delay line `d` samples behind write position `w` (linear interpolation)
+// Delay buffers (C++: SDRAM, owned by the caller). Cleared here: SDRAM isn't zeroed at boot.
+PulsarCore.prototype.setDelayBuffers = function (l, r) {
+  this.dlL = l; this.dlR = r; this.dlN = Math.min(l.length, r.length);
+  l.fill(0); r.fill(0);
+  this.dlW = 0; this.dlLen = 0.5 * this.sr; this.dlLpL = 0; this.dlLpR = 0;
+};
+PulsarCore.prototype._dlTap = function (buf, w, d, n) {
+  var pos = w - d; if (pos < 0) pos += n;
+  var pi = Math.floor(pos), f = pos - pi, pj = pi + 1 === n ? 0 : pi + 1;
+  return buf[pi] + (buf[pj] - buf[pi]) * f;
+};
+
 PulsarCore.prototype._chTap = function (buf, w, d, mask) {
   var pos = w - d, pi = Math.floor(pos), f = pos - pi;
   var a = buf[pi & mask], b = buf[(pi + 1) & mask];

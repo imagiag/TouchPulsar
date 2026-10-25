@@ -74,6 +74,10 @@ static void controlsTests() {
         NEAR(p.gate, 0.55 + 0.45 * 0.9, 1e-5, "hold keeps the released pressure");
     }
 
+    Controls dl; dl.tempo = 120.f; dl.Compute(p); NEAR(p.delaySec, 0.375, 1e-5, "default delay = 1/8 dotted at 120");
+    dl.Midi(0xB0, 108, 0, 0); dl.Midi(0xB0, 109, 127, 0); dl.Compute(p);
+    NEAR(p.delaySec, 0.125, 1e-5, "CC108 = 1/16"); NEAR(p.delayAmt, 1, 1e-6, "CC109 = amount");
+
     Controls l; l.Tick(10);
     l.PadDown(P_TO, .7f); l.PadDown(P_CH, .7f); l.Tick(10.2); l.PadUp(P_CH); l.PadUp(P_TO);
     CHECK(l.latch, "short TO+CH = hold");
@@ -90,6 +94,7 @@ static Core core;          // big: keep off the stack
 static float kernelBuf[200000];
 static KernelBuilder kb;
 static float pulsBuf[KernelBuilder::kMaxPulsaret];
+static float delayL[120004], delayR[120004];
 
 typedef void (*Script)(Controls&, double t, int block);
 
@@ -102,6 +107,7 @@ static float testInput(int s) {
 
 static void render(const char* name, float secs, Script script, bool conv = false, bool input = false) {
     core.Init(SR);
+    core.SetDelayBuffers(delayL, delayR, 120004);
     Controls c;
     const int n = (int)(secs * SR);
     std::vector<float> out(n * 2);
@@ -198,6 +204,10 @@ int main() {
         c.ch[K_SHAPE] = 0.75f; c.alt[K_WINDOW] = 0.5f;
         if (t < 2.0 && !c.touched[5]) c.PadDown(5, 0.7f);
         if (t >= 2.0 && c.touched[5]) c.PadUp(5);
+    });
+    render("delay", 4, [](Controls& c, double, int) { // rhythm burst into a dotted-1/8 ping-pong delay
+        c.SetSwitch(SW_RANGE, RHYTHM); c.tempo = 120.f; c.knob[K_MASK] = 0.4f; c.ch[K_CLUSTER] = 0.7f;
+        if (!c.touched[5]) c.PadDown(5, 0.8f);
     });
     render("conv", 3, [](Controls& c, double, int) {
         c.SetSwitch(SW_RANGE, RHYTHM); c.SetSwitch(SW_MASK, 1); c.convOn = true; c.alt[K_MASK] = 1;

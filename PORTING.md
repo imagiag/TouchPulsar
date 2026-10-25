@@ -100,7 +100,7 @@ Plan for when the Touch version moves into a module (noted 2026-10-24; not start
 - ~~**Right fader (S37) in TONE**: glide is rarely useful musically.~~ **Done (v2):** S37 in TONE is now **Thick**: a detuned second train (3–25 cents) spread L/R, plus a sub-octave sine above 60%. Glide in TONE is now a fixed 60 ms, on MIDI legato only.
 - **Done (v3): Filter**: P11 + right fader = low-pass cutoff, P11 + left fader = resonance (TPT state-variable filter, 12 dB/oct, before Drive; CC 102/103).
 - **Done (v6): Chorus / ensemble** on P10 + right fader (CC 84): 2 modulated taps per channel (chorus) fading into 3 (ensemble), after Drive. Tempo moved off that fader: tap P10 / P10 + P00/P02 / MIDI clock only, with an LED flash on every tap.
-- **Silent recording feedback**: recording with nothing on the input still blinks 3× (the old sample stays). Give silence its own blink pattern (e.g. 1 long blink) so it's clear nothing was captured. (Noted 2026-10-24.)
+- **Done (v10): Silent recording feedback**: a silent (or too short) P01 recording gives 1 long blink and keeps the old sample; a captured one gives 3 blinks.
 - **Done (v4): Live input, step 1**: Shape fully right = the input jack as the pulsaret waveform (all pulsar controls apply); P11 + S35 = input gain (CC 104); LED input meter while P11 is held.
 - **Live input, step 2 — pulsar echo**: live convolution of the input with the pulse train = a multi-tap delay with one tap per recent pulse (2 s SDRAM ring buffer, ~12 taps), so masking shapes the echo pattern. P01 tap would cycle off → sample conv → live echo. Not built yet.
 - **Live input, step 3 — input as controller**: envelope follower → gate/pressure, transient detection → trigger pulses. Not built yet.
@@ -109,10 +109,12 @@ Plan for when the Touch version moves into a module (noted 2026-10-24; not start
 
 ### Free / reclaimable controls
 - **P11 + S34 (Lift, CC 106)** is a tuning control only: it works fine at noon. **Reclaim it first** when we run out of combos, and fix the window at 0.15 s.
-- Still unused: P11 + S31, S32. (P11 + S33 = Attack since v9.)
+- All P11 knob slots are used since v10 (S31/S32 = delay, S33 = attack). Lift (S34) is the one to reclaim.
 
 ### Ideas
-- **Delay + reverb** (noted 2026-10-24; not built). Estimates on Daisy:
+- **Done (v10): Delay** — ping-pong, tempo-synced time on P11 + S31 (8 steps, default 1/8 dotted), amount on P11 + S32 (mix + feedback), CC 108/109, 2.5 s lines in SDRAM.
+- **Reverb: not planned on the device** (better done outboard, decided 2026-10-25). Original estimates kept below for reference.
+- **Delay + reverb** (noted 2026-10-24). Estimates on Daisy:
   - **Stereo delay**: up to 2 s, feedback, darkening filter, ping-pong. Time follows tap tempo (e.g. dotted 1/8); one knob for feedback + mix. < 1% CPU, 768 KB SDRAM, ~1 KB flash.
   - **Reverb**: our own Dattorro-style plate (~5–8% CPU, ~40–60 KB RAM, ~2–3 KB flash), or DaisySP ReverbSc as in TouchString (~10–15% CPU, ~100 KB, needs the LGPL DaisySP library linked).
   - **Controls**: P11 + S31 = delay amount, P11 + S32 = reverb amount. Lift (P11 + S34) can be reclaimed for a delay time or reverb damping if needed.

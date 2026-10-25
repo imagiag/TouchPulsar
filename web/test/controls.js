@@ -126,7 +126,7 @@ c.padDown(PC.P_CH, .7); c.turn(PC.K_FUND, 0.5); c.turn(PC.K_LEVEL, 0.6); c.turn(
 p = c.compute(new PulsarParams());
 near(p.cutoffHz, 30 * Math.sqrt(600), 0.01, 'P11 + right fader = cutoff'); near(p.resonance, 0.6, 1e-9, 'P11 + left fader = resonance');
 eq(c.knob[PC.K_FUND], new PulsarControls().knob[PC.K_FUND], 'right fader main value untouched');
-near(c.knob[PC.K_FORMANT], 0.9, 1e-9, 'knobs without a P11 function still edit their main value');
+near(c.ch[PC.K_FORMANT], 0.9, 1e-9, 'P11 + S31 edits delay time'); near(c.knob[PC.K_FORMANT], 0.45, 1e-9, 'formant untouched while P11 held');
 c.cc(102, 0); c.cc(103, 127); p = c.compute(new PulsarParams());
 near(p.cutoffHz, 30, 1e-6, 'CC102 = cutoff'); near(p.resonance, 1, 1e-9, 'CC103 = resonance');
 { // engine: low-pass removes highs; full resonance sweep stays stable
@@ -239,6 +239,29 @@ c.cc(107, 0); near(c.compute(new PulsarParams()).attackSec, 0.004, 1e-9, 'CC107 
     for (let b = 0; b < 100; b++) { core.setParams(pp); core.process(L, R, null, 48); if (b >= 90) for (let i = 0; i < 48; i++) e += L[i] * L[i]; }
     return core.env; };
   assert(lvl(0.004) > 0.95 && lvl(1) < 0.15, 'slow attack swells in'); pass++;
+}
+
+// --- delay on P11 + S31 (time, synced) and P11 + S32 (amount) ---
+c = new PulsarControls(); c.tempo = 120;
+p = c.compute(new PulsarParams());
+near(p.delaySec, 0.375, 1e-9, 'default delay = dotted 1/8 at 120 bpm'); eq(p.delayAmt, 0, 'delay off by default');
+c.padDown(PC.P_CH, .7); c.turn(PC.K_FORMANT, 1); c.turn(PC.K_CLUSTER, 0.5); c.padUp(PC.P_CH);
+p = c.compute(new PulsarParams()); near(p.delaySec, 1.0, 1e-9, 'P11 + S31 fully right = 1/2 note'); near(p.delayAmt, 0.5, 1e-9, 'P11 + S32 = amount');
+c.cc(108, 0); c.cc(109, 127); p = c.compute(new PulsarParams()); near(p.delaySec, 0.125, 1e-9, 'CC108 = 1/16'); near(p.delayAmt, 1, 1e-9, 'CC109 = amount');
+c.tempo = 40; c.cc(108, 127); near(c.compute(new PulsarParams()).delaySec, 2.4, 1e-9, 'long delays clamp to 2.4 s');
+{
+  const render = (amt, withBuf) => { const core = new PulsarCore(48000), pp = new PulsarParams(), L = new Float32Array(48), R = new Float32Array(48);
+    if (!withBuf) core.setDelayBuffers(new Float32Array(0), new Float32Array(0));
+    pp.fundHz = 110; pp.formantHz = [440, 0, 0]; pp.releaseSec = 0.02; pp.delaySec = 0.3; pp.delayAmt = amt;
+    const oL = [], oR = [];
+    for (let b = 0; b < 1000; b++) { pp.gate = b < 100 ? 1 : 0; core.setParams(pp); core.process(L, R, null, 48); for (let i = 0; i < 48; i++) { oL.push(L[i]); oR.push(R[i]); } }
+    return { oL, oR }; };
+  const off = render(0, true), none = render(0, false), on = render(0.5, true);
+  assert(off.oL.every((x, i) => x === none.oL[i]) && off.oR.every((x, i) => x === none.oR[i]), 'amount 0 is an exact bypass'); pass++;
+  const e = (a, t0, t1) => { let s = 0; for (let i = Math.floor(t0 * 48000); i < t1 * 48000; i++) s += a[i] * a[i]; return s; };
+  assert(e(on.oL, 0.2, 0.28) + e(on.oR, 0.2, 0.28) < 0.01 * e(on.oL, 0.3, 0.42), 'gap before the first echo is near-silent'); pass++;
+  assert(e(on.oL, 0.3, 0.42) > 50 * e(on.oR, 0.3, 0.42), 'first echo on the left at T'); pass++;
+  assert(e(on.oR, 0.6, 0.72) > 50 * e(on.oL, 0.6, 0.72), 'second echo on the right at 2T (ping-pong)'); pass++;
 }
 
 // --- hold (latch) on short P10+P11, recalibrate on long ---

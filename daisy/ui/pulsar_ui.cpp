@@ -88,7 +88,7 @@ void PulsarUI::readKnobs() {
     const bool chLayer = !to && ctl_.ChHeld(); // P11 layer: S30 motion, S35 input gain, faders = filter (TO wins)
     for (int i = 0; i < K_COUNT; i++) {
         const float v = phys[i]->Process();
-        const bool fader = i == K_SPREAD || i == K_SHAPE || i == K_WINDOW || i == K_MASK || i >= K_LEVEL; // controls with a CH-layer function (S30, S33-S37)
+        const bool fader = true; // every knob and fader has a CH-layer function (since v10: S31/S32 = delay)
         const bool useCh = chLayer && fader;
         if (firstRun_) {
             main_[i].SetTracking(v); ctl_.knob[i] = v;
@@ -156,12 +156,14 @@ void PulsarUI::handleEvents() {
                 const int slot = 1 - activeSample_;
                 float peak = 0.f;
                 for (size_t i = 0; i < n; i++) peak = fmaxf(peak, fabsf(sample_[slot][i]));
-                if (n > 256 && peak > 1e-4f) { // ignore silence / accidental taps
+                if (n > 256 && peak > 1e-3f) { // captured: normalise, switch to it, 3 blinks
                     for (size_t i = 0; i < n; i++) sample_[slot][i] /= peak;
                     sampleLen_[slot] = n; activeSample_ = slot; sampleGen_++;
                     ctl_.convOn = true;
+                    blink(3, 60, 60);
+                } else {
+                    blink(1, 600, 0);          // silence (or too short): one long blink, old sample kept
                 }
-                blink(3, 60, 60);
                 break;
             }
             case EV_RECAL: {

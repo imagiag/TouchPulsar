@@ -51,6 +51,8 @@ struct Params {
     float thick = 0.f;           // 0..1: detuned second train + stereo spread, sub above 0.6
     float inputGain = 1.f;       // live input level (shape 7)
     float chorus = 0.f;          // 0..1 chorus (lower half) -> ensemble (upper half)
+    float delaySec = 0.5f;       // delay time (controls sync it to the tempo)
+    float delayAmt = 0.f;        // 0..1 delay mix + feedback (0 = off)
     float motion = 0.f;          // 0..1 formant motion: each formant drifts in stereo (§3.1 spatial paths)
     float cutoffHz = 18000.f;    // low-pass filter cutoff (fully open by default)
     float resonance = 0.f;       // 0..1
@@ -82,6 +84,10 @@ public:
     uint32_t PulseCount() const { return pulseCount_; }
     uint32_t RingWrite() const { return ringW_; }
     float InputPeak() const { return inPeak_; }     // input level after gain (LED meter)
+
+    // Ping-pong delay lines (owned by the caller, e.g. SDRAM). Cleared here; without
+    // buffers the delay is skipped. Call from Init context, before audio starts.
+    void SetDelayBuffers(float* l, float* r, size_t len);
     uint8_t RingRoute(uint32_t i) const { return ring_[i % kRing]; }
 
     // Offline helper (main loop, not the audio thread): one pulsaret at
@@ -135,6 +141,12 @@ private:
     float chBufL_[kChorusBuf], chBufR_[kChorusBuf]; // chorus delay lines
     int chW_ = 0;
     double chPh_ = 0.0;
+    float* dlL_ = nullptr;
+    float* dlR_ = nullptr;
+    size_t dlN_ = 0, dlW_ = 0;
+    double dlLen_ = 0.0;
+    float dlLpL_ = 0.f, dlLpR_ = 0.f;
+    static float dlTap(const float* buf, size_t w, double d, size_t n);
     float lfo(double ph) const;
     static float chTap(const float* buf, int w, float d);
     int32_t lastSync_ = -1;
