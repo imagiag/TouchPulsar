@@ -70,6 +70,8 @@ PulsarTouch/
 
 Plan for when the Touch version moves into a module (noted 2026-10-24; not started).
 
+**Chosen dev hardware (2026-10-25): Qu-Bit Aurora** (already owned) via the [Aurora SDK](https://github.com/Qu-Bit-Electronix/Aurora-SDK). It's Daisy-based with the same toolchain, and the engine and most controls carry over. Firmware is a `.bin` in the root of a USB drive, loaded at power-up; restore stock firmware the same way with the official file from Qu-Bit's product page. The SDK exposes stereo audio, `GetKnobValue` / `GetCvValue` and RGB LEDs. From memory (to confirm in the SDK headers): 6 knobs (Warp, Time, Mix, Blur, Reflect, Atmosphere), each with a CV input; Freeze and Reverse buttons with gate inputs; no MIDI. Draft mapping: knobs/CV = formant, rate/pitch (one CV calibrated as V/oct), shape, window, mask, mix/thick; Freeze button/gate = note gate/hold; Reverse button/gate = clock/sync in (or shift for modes); RGB LEDs = per-pulse flash with burst/rest colours. The Seed3 dev kit notes below stay as the alternative.
+
 **Candidate hardware:** Electrosmith **Seed3 Eurorack Dev Kit** (28 HP; 8 pots, 2 toggles, 2 buttons, 4 CV in, 2 gate in, 2 CV out, MIDI, microSD, stereo AC-coupled audio). Smaller and cheaper alternative: **Patch Submodule / patch.Init()**.
 
 **Seed3 vs. the current Seed:** same STM32H750 at 480 MHz, about 64 MB SDRAM and 8 MB QSPI flash; new audio codec and USB-C, pin-compatible. There's no extra CPU, and none is needed: Pulsar uses a few percent. The real constraint is the 128 KB internal flash (90% used now). The fix is the **Daisy bootloader** (app stored in QSPI, run from SRAM, about 480 KB of code), and it works on the current Seed too.
