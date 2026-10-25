@@ -1,11 +1,16 @@
 # TouchPulsar
 
+### 🌐 Website: **[pulsar.imagiag.com](https://pulsar.imagiag.com)**
+
+**[Download firmware](https://github.com/imagiag/TouchPulsar/releases/latest)** · **[Manual](daisy/README.md)** · **[Website](https://pulsar.imagiag.com)**
+
 A pulsar synthesizer for the **Synthux Simple Touch** (Daisy Seed), prototyped in the browser first.
 
 Based on Curtis Roads, *Sound Composition with Pulsars*, Journal of the Audio Engineering Society, vol. 49, no. 3, March 2001.
 
 ## Get it
 
+- **Website:** [pulsar.imagiag.com](https://pulsar.imagiag.com): overview, features and the manual.
 - **Firmware for the Touch 2:** download the newest `.bin` from [Releases](https://github.com/imagiag/TouchPulsar/releases) (or `daisy/releases/`) and flash it at [flash.daisy.audio](https://flash.daisy.audio/). Full manual: [`daisy/manual.html`](daisy/manual.html) (open locally) or [`daisy/README.md`](daisy/README.md).
 - **Build from source:** `git clone --recurse-submodules https://github.com/imagiag/TouchPulsar.git`, then see [`daisy/README.md`](daisy/README.md#project-setup).
 - **Licence:** MIT ([LICENSE](LICENSE)); credits and third-party parts in [CREDITS.md](CREDITS.md).
