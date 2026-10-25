@@ -4,6 +4,12 @@ A pulsar synthesizer for the **Synthux Simple Touch** (Daisy Seed), prototyped i
 
 Based on Curtis Roads, *Sound Composition with Pulsars*, Journal of the Audio Engineering Society, vol. 49, no. 3, March 2001.
 
+## Get it
+
+- **Firmware for the Touch 2:** download the newest `.bin` from [Releases](https://github.com/imagiag/TouchPulsar/releases) (or `daisy/releases/`) and flash it at [flash.daisy.audio](https://flash.daisy.audio/). Full manual: [`daisy/manual.html`](daisy/manual.html) (open locally) or [`daisy/README.md`](daisy/README.md).
+- **Build from source:** `git clone --recurse-submodules https://github.com/imagiag/TouchPulsar.git`, then see [`daisy/README.md`](daisy/README.md#project-setup).
+- **Licence:** MIT ([LICENSE](LICENSE)); credits and third-party parts in [CREDITS.md](CREDITS.md).
+
 ## Run the browser prototype
 
 ```bash

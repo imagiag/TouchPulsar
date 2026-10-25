@@ -3,3 +3,11 @@
 
 # browser prototype test renders
 web/test/out/
+
+# Not part of the public repository
+# website (separate project, maintained by Codex)
+site/
+# Claude Code <-> Codex collaboration log
+NOTES.md
+# copyrighted reference papers (linked from the README instead)
+/*.pdf

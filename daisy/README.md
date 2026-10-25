@@ -169,8 +169,10 @@ PulsarTouch/
 ```
 
 ## Project Setup
-Needs the [Daisy toolchain](https://daisy.audio/tutorials/cpp-dev-env/) and libDaisy. By default the Makefile uses `../../TouchString/lib/libDaisy`; set `LIBDAISY_DIR` to use another copy. DaisySP isn't needed.
+Needs the [Daisy toolchain](https://daisy.audio/tutorials/cpp-dev-env/). libDaisy is a git submodule in `daisy/lib/libDaisy` (Synthux's fork, pinned to the version TouchString uses); DaisySP isn't needed. Clone with submodules, then build from `daisy/`:
 ```shell
+$ git clone --recurse-submodules https://github.com/imagiag/TouchPulsar.git
+$ cd TouchPulsar/daisy
 $ make libs -j8
 $ make clean; make -j8
 $ make program-dfu

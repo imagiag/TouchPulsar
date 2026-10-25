@@ -7,9 +7,9 @@ TARGET = PulsarTouch
 CPP_SOURCES = PulsarTouch.cpp $(wildcard pulsar/*.cpp) $(wildcard ui/*.cpp) $(wildcard touch/*.cpp)
 C_INCLUDES = -Icommon/ -Itouch/
 
-# libDaisy location: defaults to the copy inside the TouchString checkout next door.
-# Override with `make LIBDAISY_DIR=/path/to/libDaisy` or add it as a submodule in lib/.
-LIBDAISY_DIR ?= ../../TouchString/lib/libDaisy
+# libDaisy: git submodule in lib/libDaisy (Synthux's fork, pinned).
+# Clone with --recurse-submodules, or run: git submodule update --init
+LIBDAISY_DIR ?= lib/libDaisy
 # No DaisySP needed.
 
 SYSTEM_FILES_DIR = $(LIBDAISY_DIR)/core

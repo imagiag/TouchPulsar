@@ -283,8 +283,10 @@
 └── test/                # Host test: control checks + comparison with the browser engine</code></pre>
 
 <h2 id="setup">Project Setup</h2>
-<p>Needs the <a href="https://daisy.audio/tutorials/cpp-dev-env/">Daisy toolchain</a> and libDaisy. By default the Makefile uses <code>../../TouchString/lib/libDaisy</code>; set <code>LIBDAISY_DIR</code> to use another copy. DaisySP isn't needed.</p>
-<pre><code>$ make libs -j8
+<p>Needs the <a href="https://daisy.audio/tutorials/cpp-dev-env/">Daisy toolchain</a>. libDaisy is a git submodule in <code>daisy/lib/libDaisy</code> (Synthux's fork, pinned to the version TouchString uses); DaisySP isn't needed. Clone with submodules, then build from <code>daisy/</code>:</p>
+<pre><code>$ git clone --recurse-submodules https://github.com/imagiag/TouchPulsar.git
+$ cd TouchPulsar/daisy
+$ make libs -j8
 $ make clean; make -j8
 $ make program-dfu</code></pre>
 <ul>
