@@ -1,4 +1,6 @@
-# PulsarTouch releases
+# TouchPulsar releases
+
+Firmware files keep the internal name `PulsarTouch-…bin`.
 
 Flash these with https://flash.daisy.audio/ (BOOT + RESET, or hold BOOT while plugging in).
 `../build/PulsarTouch.bin` is only a working build and may be newer than any release: flash from here.

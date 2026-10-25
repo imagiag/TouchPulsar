@@ -1,4 +1,4 @@
-# Pulsar Touch
+# TouchPulsar
 
 A pulsar synthesizer for the **Synthux Simple Touch** (Daisy Seed), prototyped in the browser first.
 

@@ -1,4 +1,4 @@
-# This is PulsarTouch
+# This is TouchPulsar
 
 Pulsar synthesizer for the Synthux Touch synthesizer and Daisy Seed, based on Curtis Roads' *Sound Composition with Pulsars* (2001). A single control sweeps from rhythm to tone and back. Below about 20 Hz each pulsar is heard as its own beat; above about 40 Hz the beats fuse into a pitched tone with a formant you can sweep like a filter.
 
@@ -108,7 +108,7 @@ The onboard LED provides visual feedback:
 - **Recalibration**: 3 rapid blinks confirm the touch sensor baseline reset.
 
 ### MIDI
-PulsarTouch appears as a USB MIDI device when connected via the Daisy Seed's USB port. It listens on all MIDI channels.
+TouchPulsar appears as a USB MIDI device (listed as **PulsarTouch** in your computer or DAW) when connected via the Daisy Seed's USB port. It listens on all MIDI channels.
 
 - **Notes**: Fully chromatic, separate from the pad scale. Pads and MIDI share one voice (last note wins). Notes follow the Range switch:
   - TONE: pitch
@@ -118,7 +118,7 @@ PulsarTouch appears as a USB MIDI device when connected via the Daisy Seed's USB
 - **Pitch Bend**: ±2 semitones (CC 88 sets the range, 0–24).
 - **Glide**: Applied only when you play legato. TONE: a short fixed portamento (60 ms). RHYTHM: set by the right fader.
 - **Sustain** (CC 64): Holds released notes.
-- **MIDI Clock Sync**: Automatic. When clock arrives, RHYTHM follows its tempo and locks the pulses to the beat. **Start** resets the beat. If the clock stops for more than 0.5 s, PulsarTouch goes back to its own tempo.
+- **MIDI Clock Sync**: Automatic. When clock arrives, RHYTHM follows its tempo and locks the pulses to the beat. **Start** resets the beat. If the clock stops for more than 0.5 s, TouchPulsar goes back to its own tempo.
 
 | CC | Control |
 |---|---|
