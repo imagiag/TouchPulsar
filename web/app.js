@@ -143,7 +143,23 @@ function padPressure(e, ev) {
   const r = e.getBoundingClientRect();
   return clamp(1.15 - (ev.clientY - r.top) / r.height, 0.1, 1);
 }
+// P10 (TO) and P11 (CH) are click-toggles in the browser, so a mouse can hold a modifier
+// while turning knobs. Each P10 click also counts as a tap, so clicking in rhythm sets tempo.
+// Keyboard (Shift/Q, W) and the hardware stay momentary.
+function bindToggle(e, i) {
+  e.addEventListener('pointerdown', (ev) => {
+    ensureAudio(); ev.preventDefault();
+    if (!ctl.touched[i]) {                       // on: always a tap (the layer isn't in use yet)
+      if (i === PC.P_TO) ctl._tap();
+      ctl.padDown(i, 0.7); e.classList.add('locked');
+    } else {                                     // off: a tap only if no knob/pad combo was used meanwhile
+      if (i === PC.P_TO) { if (!ctl.modUsed[0]) ctl._tap(); ctl.modUsed[0] = true; } // block padUp's own tap
+      ctl.padUp(i); e.classList.remove('locked');
+    }
+  });
+}
 function bindPad(e, i) {
+  if (i === PC.P_TO || i === PC.P_CH) return bindToggle(e, i);
   const ids = new Set();
   e.addEventListener('pointerdown', (ev) => {
     ensureAudio(); e.setPointerCapture(ev.pointerId); ids.add(ev.pointerId);
@@ -516,11 +532,13 @@ function updateBoard() {
     else if (ctl.chHeld() && i === 1) sub = 'couple';
     else if (ctl.toHeld() && (i === 0 || i === 2)) sub = i ? 'bpm +' : 'bpm −';
     else if (i === 1 && ctl.recording) sub = 'REC';
+    else if ((i === 10 || i === 11) && ctl.touched[i]) sub = (i === 10 ? 'TO' : 'CH') + ' on';
+    e.classList.toggle('locked', (i === 10 || i === 11) && !!ctl.touched[i]);
     if (e._sub.textContent !== sub) e._sub.textContent = sub;
   });
   $('layerHint').innerHTML = ctl.chHeld() ? '<b style="color:#b48cf0">CH layer</b>: faders = filter cutoff (right) · resonance (left) · P03–P09 pick scale · P00/P02 cycle · P01 formant coupling'
     : alt ? '<b style="color:var(--alt)">TO layer</b>: knobs edit width · push · edge · fold · release · conv · drive · chorus · P03–P09 set root · P00/P02 tempo'
-    : 'Hold <b>P10 / Shift</b> for the second knob layer · hold <b>P11 / W</b> for scales · <b>Space</b> = hold';
+    : 'Click <b>P10</b> / <b>P11</b> to toggle their layers (or hold Shift / W) · click P10 in rhythm to tap tempo · <b>Space</b> = hold';
 }
 
 function updateDisplay(now) {
@@ -555,7 +573,7 @@ function frame(ts) {
   ctl.compute(params);
   while (ctl.events.length) {
     const ev = ctl.events.shift();
-    toast(ev.text);
+    if (!(ev.type === 'tempo' && ctl.taps.length === 1)) toast(ev.text); // single taps (e.g. toggling P10) stay quiet
     if (ev.blinks) blink.until = now + ev.blinks * 0.24;
     if (ev.type === 'rec-start') {
       if (!micStream) toast('Enable input first (Convolution card)');
