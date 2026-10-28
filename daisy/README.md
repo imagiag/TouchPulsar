@@ -31,6 +31,8 @@ Every version is kept in `releases/` with a name saying what changed, so you can
   - Hold P10 + P02 - Tempo up (+5 BPM)
   - Hold P10 + P03...P09 - Set the **root key** to that pad's current note (the scale type stays)
   - Hold P10 + any knob or fader - Second layer (see Knobs and Faders)
+  - Hold P10 + S34 - **Lift** (tuning; works as-is at noon, may be reassigned later): pressure look-back window, noon = 0.15 s (0.03–0.75 s). Longer hides slower finger lifts but responds later to softening
+  - Hold P10 + S35 - **Input gain** (−12 to +12 dB, centre = 0 dB) for the live input; while P10 is held the LED shows the input level
 - **P11 (CH)** - Modifier | Hold for scale and formant mode:
   - P11 + P00 - Previous scale (cycles through all 7 scales)
   - P11 + P02 - Next scale (cycles through all 7 scales)
@@ -41,9 +43,9 @@ Every version is kept in `releases/` with a name saying what changed, so you can
   - P11 + S31 - **Delay time** (synced: 1/16 … 1/2, default 1/8 dotted)
   - P11 + S32 - **Delay amount** (mix + feedback; fully left = off)
   - P11 + S30 - **Formant motion**: each formant drifts around the stereo field at its own speed (fully left = still, up to ~3 Hz)
-  - P11 + S33 - **Attack**: 4 ms (fully left, default) to 3 s, for slow swells. Pairs with Release (P10 + S34)
-  - P11 + S34 - **Lift** (tuning; works as-is at noon, may be reassigned later): pressure look-back window, noon = 0.15 s (0.03–0.75 s). Longer hides slower finger lifts but responds later to softening
-  - P11 + S35 - **Input gain** (−12 to +12 dB, centre = 0 dB) for the live input; while P11 is held the LED shows the input level
+  - P11 + S33 - **Attack**: 4 ms (fully left, default) to 3 s, for slow swells. Pairs with Release (P11 + S34)
+  - P11 + S34 - **Release** (20 ms–4 s), next to Attack
+  - P11 + S35 - **Conv mix**: how much of the convolved sample is heard (P01 turns convolution on/off)
 - **P10 + P11 (TO + CH)**:
   - Quick tap both - **Hold** (latch) on / off: the last note keeps sounding hands-free (2 blinks = on, 1 blink = off)
   - Hold both for ~1.5 s - Recalibrate the touch pad baselines (3 rapid blinks)
@@ -53,8 +55,8 @@ Every version is kept in `releases/` with a name saying what changed, so you can
 - S31 **Formant** | The resonant peak. Coupled: 1×–32× the pitch. Free: 50 Hz–6.4 kHz | Hold TO: **Push** (how far pad pressure raises the formant, up to +2 octaves) | Hold CH: **Delay time**
 - S32 **Cluster** | 1 to 7 cycles of the waveform in each pulsaret: longer, more focused bursts | Hold TO: **Edge** (left half: cut each pulsaret at the next pulse with a 0–6 ms crossfade · right half: let pulsarets overlap) | Hold CH: **Delay amount**
 - S33 **Shape** | Pulsaret waveform, morphing: sine · triangle · saw · square · pulse · vela · noise · **live input** (fully right) | Hold TO: **Fold** (wavefolder) | Hold CH: **Attack** (4 ms–3 s)
-- S34 **Window** | Pulsaret envelope, morphing: gauss · FOF · exp decay · linear decay · rectangle · linear attack · exp attack | Hold TO: **Release** (20 ms–4 s) | Hold CH: **Lift** (tuning, noon = 0.15 s)
-- S35 **Mask** | Removes pulsars from the train. BURST/CHANNEL: burst ratio from 1:0 (no masking) to 1:6 · STOCH: chance each pulsar plays, 100% → 3% | Hold TO: **Conv** (convolution mix) | Hold CH: **Input gain**
+- S34 **Window** | Pulsaret envelope, morphing: gauss · FOF · exp decay · linear decay · rectangle · linear attack · exp attack | Hold TO: **Lift** (tuning, noon = 0.15 s) | Hold CH: **Release** (20 ms–4 s)
+- S35 **Mask** | Removes pulsars from the train. BURST/CHANNEL: burst ratio from 1:0 (no masking) to 1:6 · STOCH: chance each pulsar plays, 100% → 3% | Hold TO: **Input gain** (live input) | Hold CH: **Conv** (convolution mix)
 
 ### Faders
 - S36 (left) **Level** | Output volume (Hold TO: **Drive** — warm saturation) (Hold CH: **Resonance**)
@@ -79,12 +81,12 @@ Every version is kept in `releases/` with a name saying what changed, so you can
 - **Three Formants**: Spread adds two more formants above the main one, each panned by Width, for vowel-like and choral tones. **Motion** (P11 + S30) sets them drifting around the stereo field at slightly different speeds, and each pulsar is placed where its formant is at that moment, following Roads' per-formant spatial paths. In RHYTHM every pulse lands somewhere new; at audio rates it becomes a slow swirl. The main formant drifts too, so Motion is audible even with Spread at 0.
 - **Coupled / Free Formant**: Coupled, the formant moves with the note, so the timbre stays the same across the keyboard. Free, it stays fixed in Hz, like a filter while the pitch moves underneath.
 - **Convolution**: Each pulse triggers a copy of the sample filtered by the pulsaret, so the sample is replayed in the pulsar rhythm. Try short percussive sounds in RHYTHM and longer ones in FREE. A wooden knock is built in, and a hold on P01 records your own (input jack, up to 2 s).
-- **Live Input**: Turn **Shape fully right** and the audio on the input jack becomes the pulsaret waveform. Each pulse opens a window onto the incoming sound, and every control applies: Window shapes the gate, Formant + Cluster set how long it opens, Mask and the switches chop the pattern, and Fold, Thick, Filter and Drive sit on top. In RHYTHM it's a tempo-synced gate/stutter; in TONE or FREE the fast gating turns into a pitched, ring-mod-like sound played from the pads. A note must be playing (pad, MIDI or Hold) for the input to be heard. Set the level with **P11 + S35**; while P11 is held, the LED lights when the input is loud enough. Careful with a microphone near speakers: it can feed back.
+- **Live Input**: Turn **Shape fully right** and the audio on the input jack becomes the pulsaret waveform. Each pulse opens a window onto the incoming sound, and every control applies: Window shapes the gate, Formant + Cluster set how long it opens, Mask and the switches chop the pattern, and Fold, Thick, Filter and Drive sit on top. In RHYTHM it's a tempo-synced gate/stutter; in TONE or FREE the fast gating turns into a pitched, ring-mod-like sound played from the pads. A note must be playing (pad, MIDI or Hold) for the input to be heard. Set the level with **P10 + S35**; while P10 is held, the LED lights when the input is loud enough. Careful with a microphone near speakers: it can feed back.
 - **Delay**: Hold P11 and use S31/S32. **S31 = time**, synced to the tempo in 8 steps: 1/16, 1/8T, 1/8, 1/8. (default), 1/4T, 1/4, 1/4., 1/2. It follows tap tempo and MIDI clock and glides like tape when changed. **S32 = amount**: one knob for mix and feedback (0 = off; fully up = long, darkening repeats). The repeats ping-pong between left and right, and the Level fader still controls everything including the tails.
 - **Filter**: Hold P11 and move the faders: right = cutoff, left = resonance. It's a smooth 12 dB/oct low-pass on both channels, placed before Drive so Drive saturates the resonance. At power-up it's fully open (no change to the sound).
 - **Chorus / Ensemble**: Hold P10 and move the right fader. Lower half: a gentle two-voice stereo chorus. Upper half: a third voice fades in for a lush, string-machine ensemble. It sits after Drive, so it widens everything, including Thick, the filter, convolution and live input. Fully down = off.
 - **Thick**: In TONE, the right fader doubles the pulsar train with a detuned copy, like two slightly out-of-tune oscillators: the sound gets wide, chorused and alive, and a sub-octave sine comes in at the top. The copy uses the same formants, shape and masking, so it keeps the pulsar character.
-- **Pressure**: Pressing harder makes a note louder and pushes the formant up (set with Push). The sound follows the highest pressure of the last moment (the *lift* window, 0.15 s by default): pressing harder is heard at once, a quick finger lift is never heard, and a released note keeps its pre-lift pressure, for the release tail and with Hold. A slow, deliberate softening is still followed, one window behind. Tune the window with P11 + S34.
+- **Pressure**: Pressing harder makes a note louder and pushes the formant up (set with Push). The sound follows the highest pressure of the last moment (the *lift* window, 0.15 s by default): pressing harder is heard at once, a quick finger lift is never heard, and a released note keeps its pre-lift pressure, for the release tail and with Hold. A slow, deliberate softening is still followed, one window behind. Tune the window with P10 + S34.
 - **Soft Takeover**: When you hold P10, or after a MIDI CC changes a value, a knob only takes control once you move it, so values never jump.
 
 ### Scales
@@ -106,7 +108,7 @@ The onboard LED provides visual feedback:
 - **Tempo**: A short flash on every P10 tap and on P10 + P00/P02.
 - **Hold / Convolution / Formant Mode**: 2 blinks = on (coupled), 1 blink = off (free).
 - **Recording**: Fast flashing while P01 records; 3 blinks when the sample is captured; **1 long blink** if only silence was recorded (the old sample stays).
-- **Input Level**: While P11 is held, the LED lights when the input signal is above about −26 dB, to help set P11 + S35.
+- **Input Level**: While P10 is held, the LED lights when the input signal is above about −26 dB, to help set P10 + S35.
 - **Recalibration**: 3 rapid blinks confirm the touch sensor baseline reset.
 
 ### MIDI
@@ -129,7 +131,7 @@ TouchPulsar appears as a USB MIDI device (listed as **PulsarTouch** in your comp
 | 7 | S36 **Level** |
 | 64 | **Sustain** |
 | 71 | S32 **Cluster** |
-| 72 | **Release** (TO + S34) |
+| 72 | **Release** (CH + S34) |
 | 74 | S31 **Formant** |
 | 75 | S33 **Shape** |
 | 76 | S34 **Window** |
@@ -138,7 +140,7 @@ TouchPulsar appears as a USB MIDI device (listed as **PulsarTouch** in your comp
 | 79 | **Push** (TO + S31) |
 | 80 | **Edge** (TO + S32) |
 | 81 | **Fold** (TO + S33) |
-| 82 | **Conv** (TO + S35) |
+| 82 | **Conv** (CH + S35) |
 | 83 | **Drive** (TO + S36) |
 | 84 | **Chorus / Ensemble** (TO + S37) |
 | 85 | S35 **Mask** |
@@ -148,9 +150,9 @@ TouchPulsar appears as a USB MIDI device (listed as **PulsarTouch** in your comp
 | 89 | **Root from MIDI** (≥ 64 on: the lowest held note sets the root key; off by default) |
 | 102 | **Filter Cutoff** (CH + S37) |
 | 103 | **Filter Resonance** (CH + S36) |
-| 104 | **Input Gain** (CH + S35) |
+| 104 | **Input Gain** (TO + S35) |
 | 105 | **Formant Motion** (CH + S30) |
-| 106 | **Lift** window (CH + S34) |
+| 106 | **Lift** window (TO + S34) |
 | 107 | **Attack** (CH + S33) |
 | 108 | **Delay Time** (CH + S31) |
 | 109 | **Delay Amount** (CH + S32) |

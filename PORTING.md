@@ -108,8 +108,8 @@ Plan for when the Touch version moves into a module (noted 2026-10-24; not start
 - **Done (v8): Lift window** for pad pressure (look-back max) removed the release dip. Tested on hardware at the default (noon = 0.15 s); no adjustment needed.
 
 ### Free / reclaimable controls
-- **P11 + S34 (Lift, CC 106)** is a tuning control only: it works fine at noon. **Reclaim it first** when we run out of combos, and fix the window at 0.15 s.
-- All P11 knob slots are used since v10 (S31/S32 = delay, S33 = attack). Lift (S34) is the one to reclaim.
+- **P10 + S34 (Lift, CC 106)** is a tuning control only (moved from P11 in v11): it works fine at noon. **Reclaim it first** when we run out of combos, and fix the window at 0.15 s.
+- All P11 knob slots are used (v11: S31/S32 = delay, S33/S34 = attack/release, S35 = conv mix). Lift (P10 + S34) is the one to reclaim.
 
 ### Ideas
 - **Done (v10): Delay** — ping-pong, tempo-synced time on P11 + S31 (8 steps, default 1/8 dotted), amount on P11 + S32 (mix + feedback), CC 108/109, 2.5 s lines in SDRAM.
@@ -117,7 +117,7 @@ Plan for when the Touch version moves into a module (noted 2026-10-24; not start
 - **Delay + reverb** (noted 2026-10-24). Estimates on Daisy:
   - **Stereo delay**: up to 2 s, feedback, darkening filter, ping-pong. Time follows tap tempo (e.g. dotted 1/8); one knob for feedback + mix. < 1% CPU, 768 KB SDRAM, ~1 KB flash.
   - **Reverb**: our own Dattorro-style plate (~5–8% CPU, ~40–60 KB RAM, ~2–3 KB flash), or DaisySP ReverbSc as in TouchString (~10–15% CPU, ~100 KB, needs the LGPL DaisySP library linked).
-  - **Controls**: P11 + S31 = delay amount, P11 + S32 = reverb amount. Lift (P11 + S34) can be reclaimed for a delay time or reverb damping if needed.
+  - **Controls**: P11 + S31 = delay amount, P11 + S32 = reverb amount. Lift (P10 + S34) can be reclaimed for a delay time or reverb damping if needed.
   - **Flash**: 91.8% used (~10.5 KB free). Delay + own plate fits; after that, move to the Daisy bootloader.
   - **First**: measure real CPU with a `DEBUG=1` build (USB serial) before adding the reverb.
   - The plain synced delay overlaps partly with *pulsar echo* (live input step 2), whose echo taps follow the masked pulse pattern. Keep that as a separate mode.

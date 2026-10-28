@@ -24,9 +24,9 @@ static constexpr int kNumBursts = sizeof(kBursts) / sizeof(kBursts[0]);
 // CC map: {cc, layer (0 main / 1 alt), index}
 static const int kCcMap[16][3] = {
     {77, 0, 0}, {74, 0, 1}, {71, 0, 2}, {75, 0, 3}, {76, 0, 4}, {85, 0, 5}, {7, 0, 6}, {5, 0, 7},
-    {78, 1, 0}, {79, 1, 1}, {80, 1, 2}, {81, 1, 3}, {72, 1, 4}, {82, 1, 5}, {83, 1, 6}, {84, 1, 7},
+    {78, 1, 0}, {79, 1, 1}, {80, 1, 2}, {81, 1, 3}, {106, 1, 4}, {104, 1, 5}, {83, 1, 6}, {84, 1, 7},
 };
-enum { CC_CUTOFF = 102, CC_RES = 103, CC_IN_GAIN = 104, CC_MOTION = 105, CC_LIFT = 106, CC_ATTACK = 107, CC_DELAY_TIME = 108, CC_DELAY_AMT = 109, CC_MOD = 1, CC_SUSTAIN = 64, CC_RANGE = 86, CC_MASKMODE = 87, CC_BEND_RANGE = 88, CC_ROOT_FROM_MIDI = 89 };
+enum { CC_CUTOFF = 102, CC_RES = 103, CC_CONV = 82, CC_MOTION = 105, CC_RELEASE = 72, CC_ATTACK = 107, CC_DELAY_TIME = 108, CC_DELAY_AMT = 109, CC_MOD = 1, CC_SUSTAIN = 64, CC_RANGE = 86, CC_MASKMODE = 87, CC_BEND_RANGE = 88, CC_ROOT_FROM_MIDI = 89 };
 static constexpr float kLegatoGlideSec = 0.06f;
 static constexpr double kPressHistDt = 0.01;
 static constexpr double kHoldSec = 0.4, kLatchMaxSec = 1.0, kRecalSec = 1.5;
@@ -36,11 +36,11 @@ static inline float clampf(float v, float a, float b) { return v < a ? a : (v > 
 
 Controls::Controls() {
     static const float k[K_COUNT] = {0.15f, 0.45f, 0.f, 0.f, 0.f, 0.f, 0.7f, 0.35f};
-    static const float a[K_COUNT] = {0.6f, 0.35f, 0.3f, 0.f, 0.3f, 0.6f, 0.15f, 0.f}; // [7] chorus (off)
+    static const float a[K_COUNT] = {0.6f, 0.35f, 0.3f, 0.f, 0.5f, 0.5f, 0.15f, 0.f}; // [4] lift 0.15 s, [5] input gain 0 dB, [7] chorus off
     for (int i = 0; i < K_COUNT; i++) { knob[i] = k[i]; alt[i] = a[i]; ch[i] = 0.f; }
     ch[K_FUND] = 1.f;   // filter fully open
-    ch[K_MASK] = 0.5f;  // input gain 0 dB
-    ch[K_WINDOW] = 0.5f; // lift window 0.15 s
+    ch[K_MASK] = 0.6f;  // conv mix 60 %
+    ch[K_WINDOW] = 0.3f; // release ~0.1 s
     ch[K_FORMANT] = 3.f / 7.f; // delay time 1/8 dotted
     sw[0] = sw[1] = 0;
     for (int i = 0; i < 12; i++) {
@@ -153,7 +153,7 @@ void Controls::PadMove(int i, float pr) {
 
 // ---- pressure look-back: the sound uses max(now, value LiftSec() ago), so a finger lift
 // shorter than the window is never heard, and a released pad keeps its pre-lift pressure.
-double Controls::LiftSec() const { return (double)(0.03f * powf(25.f, ch[K_WINDOW])); } // 0.03 .. 0.75 s
+double Controls::LiftSec() const { return (double)(0.03f * powf(25.f, alt[K_WINDOW])); } // P10 + S34 // 0.03 .. 0.75 s
 void Controls::pressRecord(int i, float v) {
     if (now_ - pHistLast_[i] < kPressHistDt) return;
     pHistV_[i][pHistW_[i]] = v; pHistT_[i][pHistW_[i]] = now_;
@@ -244,9 +244,9 @@ void Controls::cc(int c, int v) {
     if (c == CC_DELAY_TIME) ch[K_FORMANT] = x;
     else if (c == CC_DELAY_AMT) ch[K_CLUSTER] = x;
     else if (c == CC_ATTACK) ch[K_SHAPE] = x;
-    else if (c == CC_LIFT) ch[K_WINDOW] = x;
+    else if (c == CC_RELEASE) ch[K_WINDOW] = x;
     else if (c == CC_MOTION) ch[K_SPREAD] = x;
-    else if (c == CC_IN_GAIN) ch[K_MASK] = x;
+    else if (c == CC_CONV) ch[K_MASK] = x;
     else if (c == CC_CUTOFF) ch[K_FUND] = x;
     else if (c == CC_RES) ch[K_LEVEL] = x;
     else if (c == CC_MOD) mod_ = x;
@@ -361,13 +361,13 @@ void Controls::Compute(Params& out) const {
 
     out.gate = gate;
     out.attackSec = pcExp(ch[K_SHAPE], 0.004f, 3.f); // P11 + S33: 4 ms (fully left) .. 3 s
-    out.releaseSec = pcExp(alt[K_WINDOW], 0.02f, 4.f);
-    out.convMix = convOn ? alt[K_MASK] : 0.f;
+    out.releaseSec = pcExp(ch[K_WINDOW], 0.02f, 4.f); // P11 + S34 (next to attack)
+    out.convMix = convOn ? ch[K_MASK] : 0.f; // P11 + S35
     out.level = knob[K_LEVEL];
     out.drive = alt[K_LEVEL];
     out.cutoffHz = pcExp(ch[K_FUND], 30.f, 18000.f);
     out.resonance = ch[K_LEVEL];
-    out.inputGain = pcExp(ch[K_MASK], 0.25f, 4.f); // -12..+12 dB, centre = 0 dB
+    out.inputGain = pcExp(alt[K_MASK], 0.25f, 4.f); // P10 + S35: -12..+12 dB, centre = 0 dB
     out.motion = ch[K_SPREAD];
     out.chorus = alt[K_FUND];
     out.delaySec = fminf(2.4f, 60.f / bpm * kDelayBeats[(int)lroundf(ch[K_FORMANT] * 7.f)]);

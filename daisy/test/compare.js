@@ -83,7 +83,7 @@ compare('filter', 4, (c, t) => {
 });
 compare('live_input', 3, (c) => {
   c.setSwitch(PC.SW_RANGE, 2); c.coupled = false; c.knob[PC.K_SHAPE] = 1; c.knob[PC.K_FORMANT] = 0.1;
-  c.knob[PC.K_CLUSTER] = 1; c.knob[PC.K_MASK] = 0.25; c.alt[PC.K_SHAPE] = 0.2; c.ch[PC.K_MASK] = 0.6;
+  c.knob[PC.K_CLUSTER] = 1; c.knob[PC.K_MASK] = 0.25; c.alt[PC.K_SHAPE] = 0.2; c.alt[PC.K_MASK] = 0.6;
   if (!c.touched[6]) c.padDown(6, 0.8);
 }, false, true);
 compare('motion', 4, (c) => {
@@ -95,14 +95,14 @@ compare('chorus', 4, (c, t) => {
   if (!c.touched[5]) c.padDown(5, 0.7);
 });
 compare('pressure_hold', 3, (c, t, b) => {
-  if (b === 0) { c.knob[PC.K_FUND] = 0; c.alt[PC.K_FORMANT] = 0.8; c.alt[PC.K_WINDOW] = 0.6; }
+  if (b === 0) { c.knob[PC.K_FUND] = 0; c.alt[PC.K_FORMANT] = 0.8; c.ch[PC.K_WINDOW] = 0.6; }
   if (b === 10) { c.padDown(PC.P_TO, .7); c.padDown(PC.P_CH, .7); c.padUp(PC.P_CH); c.padUp(PC.P_TO); }
   if (t > 0.3 && t < 1.2 && !c.touched[6]) c.padDown(6, 0.3);
   if (c.touched[6]) c.padMove(6, t < 1.0 ? Math.fround(0.3 + 0.6 * (t - 0.3) / 0.7) : Math.fround(0.9 - (t - 1.0) * 4.0));
   if (t >= 1.2 && c.touched[6]) c.padUp(6);
 });
 compare('attack', 3, (c, t) => {
-  c.ch[PC.K_SHAPE] = 0.75; c.alt[PC.K_WINDOW] = 0.5;
+  c.ch[PC.K_SHAPE] = 0.75; c.ch[PC.K_WINDOW] = 0.5;
   if (t < 2.0 && !c.touched[5]) c.padDown(5, 0.7);
   if (t >= 2.0 && c.touched[5]) c.padUp(5);
 });
@@ -111,7 +111,7 @@ compare('delay', 4, (c) => {
   if (!c.touched[5]) c.padDown(5, 0.8);
 });
 compare('conv', 3, (c) => {
-  c.setSwitch(PC.SW_RANGE, 2); c.setSwitch(PC.SW_MASK, 1); c.convOn = true; c.alt[PC.K_MASK] = 1;
+  c.setSwitch(PC.SW_RANGE, 2); c.setSwitch(PC.SW_MASK, 1); c.convOn = true; c.ch[PC.K_MASK] = 1;
   c.knob[PC.K_MASK] = 0.1; if (!c.touched[7]) c.padDown(7, 0.7);
 }, true);
 

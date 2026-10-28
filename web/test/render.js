@@ -66,7 +66,7 @@ const pls = new Float32Array(SR); kcore.p.cluster = 3; const pl = kcore.renderPu
 const kern = psConvolveKernel(pls, pl, smp, smp.length, SR * PS.MAX_KERNEL_SEC);
 run('conv_channel', 4, (c, t, core) => {
   if (t === 0) core.setKernel(kern, kern.length);
-  c.sw = [2, 1]; c.convOn = true; c.alt[PC.K_MASK] = 1; c.knob[PC.K_MASK] = 0.1; if (!c.touched[7]) c.padDown(7, 0.7);
+  c.sw = [2, 1]; c.convOn = true; c.ch[PC.K_MASK] = 1; c.knob[PC.K_MASK] = 0.1; if (!c.touched[7]) c.padDown(7, 0.7);
 });
 // 6. Extreme: max fundamental, max cluster, overlap -> voice stealing
 run('stress', 2, (c, t) => {

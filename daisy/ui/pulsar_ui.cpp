@@ -197,8 +197,8 @@ void PulsarUI::updateLed(DaisySeed& hw) {
             else { blinkLit_ = true; blinkPhaseEnd_ = t + blinkOn_ * 1e-3; }
         }
         led = blinkLit_;
-    } else if (ctl_.ChHeld() && !ctl_.ToHeld()) {
-        led = core_.InputPeak() > 0.05f; // P11 held: LED = input level meter (set P11 + S35 gain)
+    } else if (ctl_.ToHeld() && !ctl_.ChHeld()) {
+        led = core_.InputPeak() > 0.05f; // P10 held: LED = input level meter (set P10 + S35 gain)
     } else if (core_.Recording()) {
         led = (usAcc_ / 50000u) % 2 == 0; // 10 Hz flash
     } else if (params_.gate > 0.f) {

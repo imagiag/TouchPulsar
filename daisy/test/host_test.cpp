@@ -78,6 +78,15 @@ static void controlsTests() {
     dl.Midi(0xB0, 108, 0, 0); dl.Midi(0xB0, 109, 127, 0); dl.Compute(p);
     NEAR(p.delaySec, 0.125, 1e-5, "CC108 = 1/16"); NEAR(p.delayAmt, 1, 1e-6, "CC109 = amount");
 
+    { // v11 layer swap: release + conv on P11 (CC 72/82), lift + input gain on P10 (CC 106/104)
+        Controls s; s.convOn = true; Params q; s.Compute(q);
+        NEAR(q.releaseSec, 0.02 * pow(200.0, 0.3), 1e-4, "default release unchanged"); NEAR(q.convMix, 0.6, 1e-6, "default conv unchanged");
+        NEAR(s.LiftSec(), 0.15, 1e-4, "default lift unchanged"); NEAR(q.inputGain, 1, 1e-4, "default input gain unchanged");
+        s.Midi(0xB0, 72, 0, 0); s.Midi(0xB0, 82, 127, 0); s.Midi(0xB0, 106, 127, 0); s.Midi(0xB0, 104, 0, 0); s.Compute(q);
+        NEAR(q.releaseSec, 0.02, 1e-5, "CC72 = release"); NEAR(q.convMix, 1, 1e-6, "CC82 = conv");
+        NEAR(s.LiftSec(), 0.75, 1e-4, "CC106 = lift"); NEAR(q.inputGain, 0.25, 1e-5, "CC104 = input gain");
+    }
+
     Controls l; l.Tick(10);
     l.PadDown(P_TO, .7f); l.PadDown(P_CH, .7f); l.Tick(10.2); l.PadUp(P_CH); l.PadUp(P_TO);
     CHECK(l.latch, "short TO+CH = hold");
@@ -182,7 +191,7 @@ int main() {
     });
     render("live_input", 3, [](Controls& c, double, int) { // input as waveform, rhythmic gate with masking + fold
         c.SetSwitch(SW_RANGE, RHYTHM); c.coupled = false; c.knob[K_SHAPE] = 1.f; c.knob[K_FORMANT] = 0.1f;
-        c.knob[K_CLUSTER] = 1.f; c.knob[K_MASK] = 0.25f; c.alt[K_SHAPE] = 0.2f; c.ch[K_MASK] = 0.6f;
+        c.knob[K_CLUSTER] = 1.f; c.knob[K_MASK] = 0.25f; c.alt[K_SHAPE] = 0.2f; c.alt[K_MASK] = 0.6f;
         if (!c.touched[6]) c.PadDown(6, 0.8f);
     }, false, true);
     render("motion", 4, [](Controls& c, double, int) { // 3 formants drifting in stereo, with thick
@@ -194,14 +203,14 @@ int main() {
         if (!c.touched[5]) c.PadDown(5, 0.7f);
     });
     render("pressure_hold", 3, [](Controls& c, double t, int b) { // play, lift with a falling pressure, hold keeps it
-        if (b == 0) { c.knob[K_FUND] = 0.f; c.alt[K_FORMANT] = 0.8f; c.alt[K_WINDOW] = 0.6f; }
+        if (b == 0) { c.knob[K_FUND] = 0.f; c.alt[K_FORMANT] = 0.8f; c.ch[K_WINDOW] = 0.6f; }
         if (b == 10) { c.PadDown(P_TO, .7f); c.PadDown(P_CH, .7f); c.PadUp(P_CH); c.PadUp(P_TO); }
         if (t > 0.3 && t < 1.2 && !c.touched[6]) c.PadDown(6, 0.3f);
         if (c.touched[6]) c.PadMove(6, t < 1.0 ? (float)(0.3 + 0.6 * (t - 0.3) / 0.7) : (float)(0.9 - (t - 1.0) * 4.0));
         if (t >= 1.2 && c.touched[6]) c.PadUp(6);
     });
     render("attack", 3, [](Controls& c, double t, int) { // slow attack swells, then a release
-        c.ch[K_SHAPE] = 0.75f; c.alt[K_WINDOW] = 0.5f;
+        c.ch[K_SHAPE] = 0.75f; c.ch[K_WINDOW] = 0.5f;
         if (t < 2.0 && !c.touched[5]) c.PadDown(5, 0.7f);
         if (t >= 2.0 && c.touched[5]) c.PadUp(5);
     });
@@ -210,7 +219,7 @@ int main() {
         if (!c.touched[5]) c.PadDown(5, 0.8f);
     });
     render("conv", 3, [](Controls& c, double, int) {
-        c.SetSwitch(SW_RANGE, RHYTHM); c.SetSwitch(SW_MASK, 1); c.convOn = true; c.alt[K_MASK] = 1;
+        c.SetSwitch(SW_RANGE, RHYTHM); c.SetSwitch(SW_MASK, 1); c.convOn = true; c.ch[K_MASK] = 1;
         c.knob[K_MASK] = 0.1f; if (!c.touched[7]) c.PadDown(7, 0.7f);
     }, true);
     printf("host checks: %d passed, %d failed\n", g_pass, g_fail);

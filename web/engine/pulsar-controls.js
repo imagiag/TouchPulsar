@@ -12,8 +12,8 @@ var PC = {
   K_SPREAD: 0, K_FORMANT: 1, K_CLUSTER: 2, K_SHAPE: 3, K_WINDOW: 4, K_MASK: 5, K_LEVEL: 6, K_FUND: 7,
   KNOB_IDS: ['S30', 'S31', 'S32', 'S33', 'S34', 'S35', 'S36', 'S37'],
   KNOB_NAMES: ['spread', 'formant', 'cluster', 'shape', 'window', 'mask', 'level', 'fund'],
-  ALT_NAMES: ['width', 'push', 'edge', 'fold', 'release', 'conv', 'drive', 'chorus'],
-  CH_NAMES: ['motion', 'dly time', 'delay', 'attack', 'lift', 'in gain', 'res', 'cutoff'], // P11 (CH) layer
+  ALT_NAMES: ['width', 'push', 'edge', 'fold', 'lift', 'in gain', 'drive', 'chorus'],
+  CH_NAMES: ['motion', 'dly time', 'delay', 'attack', 'release', 'conv', 'res', 'cutoff'], // P11 (CH) layer
   CH_KNOBS: [0, 1, 2, 3, 4, 5, 6, 7], // every knob and fader has a CH-layer function
   // delay time steps (beats), synced to the tempo
   DELAY_BEATS: [0.25, 1 / 3, 0.5, 0.75, 2 / 3, 1, 1.5, 2],
@@ -54,19 +54,19 @@ var PC = {
   // MIDI CC map: [cc, layer ('k' main / 'a' alt), index]
   CC_MAP: [
     [77, 'k', 0], [74, 'k', 1], [71, 'k', 2], [75, 'k', 3], [76, 'k', 4], [85, 'k', 5], [7, 'k', 6], [5, 'k', 7],
-    [78, 'a', 0], [79, 'a', 1], [80, 'a', 2], [81, 'a', 3], [72, 'a', 4], [82, 'a', 5], [83, 'a', 6], [84, 'a', 7],
+    [78, 'a', 0], [79, 'a', 1], [80, 'a', 2], [81, 'a', 3], [106, 'a', 4], [104, 'a', 5], [83, 'a', 6], [84, 'a', 7],
   ],
-  CC_CUTOFF: 102, CC_RES: 103, CC_IN_GAIN: 104, CC_MOTION: 105, CC_LIFT: 106, CC_ATTACK: 107, CC_DELAY_TIME: 108, CC_DELAY_AMT: 109,
+  CC_CUTOFF: 102, CC_RES: 103, CC_CONV: 82, CC_MOTION: 105, CC_RELEASE: 72, CC_ATTACK: 107, CC_DELAY_TIME: 108, CC_DELAY_AMT: 109,
   CC_MOD: 1, CC_SUSTAIN: 64, CC_RANGE: 86, CC_MASKMODE: 87, CC_BEND_RANGE: 88, CC_ROOT_FROM_MIDI: 89,
   CC_ALL_OFF: 123,
 };
 
 function PulsarControls() {
   this.knob = [0.15, 0.45, 0.0, 0.0, 0.0, 0.0, 0.7, 0.35];
-  this.alt = [0.6, 0.35, 0.3, 0.0, 0.3, 0.6, 0.15, 0.0]; // [7] chorus/ensemble (off)
+  this.alt = [0.6, 0.35, 0.3, 0.0, 0.5, 0.5, 0.15, 0.0]; // [4] lift (0.15 s), [5] input gain (0 dB) // [7] chorus/ensemble (off)
   this.tempo = 90;           // BPM: tap P10, P10 + P00/P02, or MIDI clock
-  this.ch = [0, 3 / 7, 0, 0, 0.5, 0.5, 0, 1]; // CH layer: [0] motion (off), [1] delay time (1/8.), [2] delay amount (off), [3] attack (4 ms),
-                                          // [4] lift window (0.15 s), [5] input gain (0 dB), [6] resonance, [7] cutoff (open)
+  this.ch = [0, 3 / 7, 0, 0, 0.3, 0.6, 0, 1]; // CH layer: [0] motion (off), [1] delay time (1/8.), [2] delay amount (off), [3] attack (4 ms),
+                                          // [4] release (0.1 s), [5] conv mix (60 %), [6] resonance, [7] cutoff (open)
   this.sw = [0, 0];
   this.touched = new Uint8Array(12);
   this.pressure = new Float32Array(12);
@@ -224,7 +224,7 @@ PulsarControls.prototype.padMove = function (i, pressure) {
 // ---- pressure look-back: the sound uses max(now, value `lift` seconds ago), so a finger
 // lift shorter than the window is never heard, and a released pad keeps its pre-lift pressure.
 PulsarControls.prototype.delayStep = function () { return Math.round(this.ch[PC.K_FORMANT] * 7); };
-PulsarControls.prototype.liftSec = function () { return pcExp(this.ch[PC.K_WINDOW], 0.03, 0.75); };
+PulsarControls.prototype.liftSec = function () { return pcExp(this.alt[PC.K_WINDOW], 0.03, 0.75); }; // P10 + S34
 PulsarControls.prototype._pressRecord = function (i, v) {
   if (this.now - this.pHistLast[i] < PC.PRESS_HIST_DT) return;
   var k = i * PC.PRESS_HIST + this.pHistW[i];
@@ -319,9 +319,9 @@ PulsarControls.prototype.cc = function (c, v) {
   if (c === PC.CC_DELAY_TIME) this.ch[PC.K_FORMANT] = x;
   else if (c === PC.CC_DELAY_AMT) this.ch[PC.K_CLUSTER] = x;
   else if (c === PC.CC_ATTACK) this.ch[PC.K_SHAPE] = x;
-  else if (c === PC.CC_LIFT) this.ch[PC.K_WINDOW] = x;
+  else if (c === PC.CC_RELEASE) this.ch[PC.K_WINDOW] = x;
   else if (c === PC.CC_MOTION) this.ch[PC.K_SPREAD] = x;
-  else if (c === PC.CC_IN_GAIN) this.ch[PC.K_MASK] = x;
+  else if (c === PC.CC_CONV) this.ch[PC.K_MASK] = x;
   else if (c === PC.CC_CUTOFF) this.ch[PC.K_FUND] = x;
   else if (c === PC.CC_RES) this.ch[PC.K_LEVEL] = x;
   else if (c === PC.CC_MOD) this.mod = x;
@@ -444,13 +444,13 @@ PulsarControls.prototype.compute = function (out) {
 
   out.gate = gate;
   out.attackSec = pcExp(this.ch[PC.K_SHAPE], 0.004, 3); // P11 + S33: 4 ms (fully left) .. 3 s
-  out.releaseSec = pcExp(A[PC.K_WINDOW], 0.02, 4);
-  out.convMix = this.convOn ? A[PC.K_MASK] : 0;
+  out.releaseSec = pcExp(this.ch[PC.K_WINDOW], 0.02, 4); // P11 + S34 (next to attack)
+  out.convMix = this.convOn ? this.ch[PC.K_MASK] : 0; // P11 + S35
   out.level = K[PC.K_LEVEL];
   out.drive = A[PC.K_LEVEL];
   out.cutoffHz = pcExp(this.ch[PC.K_FUND], 30, 18000);
   out.resonance = this.ch[PC.K_LEVEL];
-  out.inputGain = pcExp(this.ch[PC.K_MASK], 0.25, 4); // -12..+12 dB, centre = 0 dB
+  out.inputGain = pcExp(A[PC.K_MASK], 0.25, 4); // P10 + S35: -12..+12 dB, centre = 0 dB
   out.motion = this.ch[PC.K_SPREAD];
   out.chorus = A[PC.K_FUND];
   out.delaySec = Math.min(2.4, 60 / bpm * PC.DELAY_BEATS[this.delayStep()]);

@@ -57,8 +57,8 @@ The engine has one pulsar generator with three formants, all sharing one f<sub>p
 | S31 | **Formant** f<sub>d</sub>: × f<sub>p</sub> when coupled, Hz when free · hold **P11**: **delay time** (synced) | **Push**: how far pad pressure raises the formant |
 | S32 | **Cluster**: 1–7 cycles of w per pulsaret · hold **P11**: **delay amount** | **Edge**: cut crossfade (PulWM) → overlap (OPulWM) |
 | S33 | **Shape**: sine · tri · saw · square · pulse · vela · noise · **live input** (fully right: the input jack becomes the pulsaret waveform) | **Fold**: wavefolder |
-| S34 | **Window**: gauss · FOF · expodec · lindec · rect · linatt · expatt | **Release** |
-| S35 | **Mask**: burst ratio b:r, or probability · hold **P11**: **input gain** | **Conv**: convolution mix |
+| S34 | **Window**: gauss · FOF · expodec · lindec · rect · linatt · expatt · hold **P11**: **release** | **Lift** (pressure look-back) |
+| S35 | **Mask**: burst ratio b:r, or probability · hold **P11**: **conv mix** | **Input gain** (live input) |
 | S36 fader | **Level** · hold **P11**: filter **resonance** | **Drive** |
 | S37 fader | hold **P11**: filter **cutoff** · TONE: **thick** (detuned second train + stereo width, sub-octave above 60%) · FREE: **fundamental** 0.25 Hz–2 kHz · RHYTHM: **glide** | **Chorus → ensemble** |
 | S09/10 switch | **TONE**: pads are scale notes · **FREE**: the fader sets f<sub>p</sub> and the pads play the formant · **RHYTHM**: pads are note values (1/4 … 1/32) at the current tempo, taken from the paper's pulsar graph (Fig. 5); glide here gives accelerando and ritardando | |

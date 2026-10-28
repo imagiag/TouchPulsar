@@ -145,8 +145,8 @@ near(p.cutoffHz, 30, 1e-6, 'CC102 = cutoff'); near(p.resonance, 1, 1e-9, 'CC103 
 // --- live input as the pulsaret waveform (Shape fully right) ---
 c = new PulsarControls(); c.knob[PC.K_SHAPE] = 1;
 p = c.compute(new PulsarParams()); eq(p.shape, 7, 'Shape fully right = live input'); near(p.inputGain, 1, 1e-9, 'input gain 0 dB by default');
-c.padDown(PC.P_CH, .7); c.turn(PC.K_MASK, 1); c.padUp(PC.P_CH);
-p = c.compute(new PulsarParams()); near(p.inputGain, 4, 1e-9, 'P11 + S35 = input gain (+12 dB)'); eq(c.knob[PC.K_MASK], 0, 'mask untouched');
+c.padDown(PC.P_TO, .7); c.turn(PC.K_MASK, 1); c.padUp(PC.P_TO);
+p = c.compute(new PulsarParams()); near(p.inputGain, 4, 1e-9, 'P10 + S35 = input gain (+12 dB)'); eq(c.knob[PC.K_MASK], 0, 'mask untouched');
 c.cc(104, 0); near(c.compute(new PulsarParams()).inputGain, 0.25, 1e-9, 'CC104 = input gain');
 {
   const run = (gate, shape) => { const core = new PulsarCore(48000), pp = new PulsarParams(), L = new Float32Array(48), R = new Float32Array(48), inp = new Float32Array(48);
@@ -223,8 +223,8 @@ c.cc(84, 0); eq(c.compute(new PulsarParams()).chorus, 0, 'CC84 = chorus');
   assert(pr > 0.3 && pr < 0.46, 'slow softening is followed, one window behind: ' + pr); pass++;
   // the lift window is on P11 + S34: noon = 0.15 s, CC106
   near(new PulsarControls().liftSec(), 0.15, 1e-9, 'lift window 0.15 s at noon');
-  const lc = new PulsarControls(); lc.padDown(PC.P_CH, .7); lc.turn(PC.K_WINDOW, 1); lc.padUp(PC.P_CH);
-  near(lc.liftSec(), 0.75, 1e-9, 'P11 + S34 = lift window'); eq(lc.knob[PC.K_WINDOW], 0, 'window knob untouched');
+  const lc = new PulsarControls(); lc.padDown(PC.P_TO, .7); lc.turn(PC.K_WINDOW, 1); lc.padUp(PC.P_TO);
+  near(lc.liftSec(), 0.75, 1e-9, 'P10 + S34 = lift window'); eq(lc.knob[PC.K_WINDOW], 0, 'window knob untouched');
   lc.cc(106, 0); near(lc.liftSec(), 0.03, 1e-9, 'CC106 = lift window');
 }
 
@@ -262,6 +262,22 @@ c.tempo = 40; c.cc(108, 127); near(c.compute(new PulsarParams()).delaySec, 2.4, 
   assert(e(on.oL, 0.2, 0.28) + e(on.oR, 0.2, 0.28) < 0.01 * e(on.oL, 0.3, 0.42), 'gap before the first echo is near-silent'); pass++;
   assert(e(on.oL, 0.3, 0.42) > 50 * e(on.oR, 0.3, 0.42), 'first echo on the left at T'); pass++;
   assert(e(on.oR, 0.6, 0.72) > 50 * e(on.oL, 0.6, 0.72), 'second echo on the right at 2T (ping-pong)'); pass++;
+}
+
+// --- v11 layer swap: attack/release and conv on P11, lift and input gain on P10 ---
+{
+  const d = new PulsarControls(), dp = d.compute(new PulsarParams());
+  near(dp.releaseSec, 0.02 * Math.pow(200, 0.3), 1e-9, 'default release unchanged (~0.1 s)');
+  near(d.liftSec(), 0.15, 1e-9, 'default lift unchanged'); near(dp.inputGain, 1, 1e-9, 'default input gain unchanged');
+  d.convOn = true; near(d.compute(new PulsarParams()).convMix, 0.6, 1e-9, 'default conv mix unchanged');
+  const c2 = new PulsarControls(); c2.convOn = true;
+  c2.padDown(PC.P_CH, .7); c2.turn(PC.K_WINDOW, 1); c2.turn(PC.K_MASK, 0.25); c2.padUp(PC.P_CH);
+  const q = c2.compute(new PulsarParams());
+  near(q.releaseSec, 4, 1e-9, 'P11 + S34 = release'); near(q.convMix, 0.25, 1e-9, 'P11 + S35 = conv mix');
+  near(c2.liftSec(), 0.15, 1e-9, 'lift untouched by P11 + S34'); near(q.inputGain, 1, 1e-9, 'input gain untouched by P11 + S35');
+  c2.cc(72, 0); c2.cc(82, 127); const r = c2.compute(new PulsarParams());
+  near(r.releaseSec, 0.02, 1e-9, 'CC72 = release'); near(r.convMix, 1, 1e-9, 'CC82 = conv mix');
+  eq(PC.ALT_NAMES[4] + '/' + PC.ALT_NAMES[5] + ' | ' + PC.CH_NAMES[4] + '/' + PC.CH_NAMES[5], 'lift/in gain | release/conv', 'layer names');
 }
 
 // --- hold (latch) on short P10+P11, recalibrate on long ---

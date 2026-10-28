@@ -43,7 +43,7 @@ public:
     // state (public, like the JS object; the UI glue reads/writes knob/alt)
     float knob[K_COUNT];
     float alt[K_COUNT];
-    float ch[K_COUNT];      // CH layer: ch[K_SPREAD] motion, ch[K_FORMANT] delay time, ch[K_CLUSTER] delay amount, ch[K_SHAPE] attack, ch[K_WINDOW] lift window, ch[K_MASK] input gain, ch[K_LEVEL] resonance, ch[K_FUND] cutoff
+    float ch[K_COUNT];      // CH layer: ch[K_SPREAD] motion, ch[K_FORMANT] delay time, ch[K_CLUSTER] delay amount, ch[K_SHAPE] attack, ch[K_WINDOW] release, ch[K_MASK] conv mix, ch[K_LEVEL] resonance, ch[K_FUND] cutoff
     int sw[2];
     uint8_t touched[12];
     float pressure[12];
@@ -60,7 +60,7 @@ public:
     bool ChHeld() const { return touched[P_CH]; }
     bool Chromatic() const { return scale == 0; }
     int ActiveKey() const;
-    double LiftSec() const;     // P11 + S34: pressure look-back window (noon = 0.15 s)
+    double LiftSec() const;     // P10 + S34: pressure look-back window (noon = 0.15 s)
     float EffPress(int i) const; // max(now, pressure LiftSec() ago): finger lifts aren't heard
     int PadSemis(int pad) const;
 
