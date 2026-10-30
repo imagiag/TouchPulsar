@@ -98,6 +98,18 @@ c.midi(0x80, 62, 0); c.midi(0x90, 52, 100); // E3 = 1/8T: 3 per beat, still inte
 eq(c.compute(new PulsarParams()).sync, 2, 'triplets sync too');
 c.tick(t + 1); eq(c.extBpm, 0, 'clock loss falls back to internal tempo');
 
+// --- delay time ignores clock jitter, follows real tempo changes ---
+c = new PulsarControls(); t = 0;
+let seed = 1; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647 - 0.5);
+for (let i = 0; i < 96; i++) { c.midi(0xF8, 0, 0, t + rnd() * 0.002); t += tick; } // +-1 ms jitter
+let d0 = c.compute(new PulsarParams()).delaySec, dMax = 0;
+for (let i = 0; i < 480; i++) { c.midi(0xF8, 0, 0, t + rnd() * 0.002); t += tick; dMax = Math.max(dMax, Math.abs(c.compute(new PulsarParams()).delaySec - d0)); }
+eq(dMax, 0, 'jittery clock: delay time stays put');
+near(d0, 60 / 120 * 0.75, 0.01, 'delay 1/8 dotted at clock tempo');
+const tick2 = 60 / 132 / 24;
+for (let i = 0; i < 96; i++) { c.midi(0xF8, 0, 0, t); t += tick2; }
+near(c.compute(new PulsarParams()).delaySec, 60 / 132 * 0.75, 0.005, 'delay follows a real tempo change');
+
 // --- Thick on the right fader in TONE ---
 c = new PulsarControls(); c.knob[PC.K_FUND] = 0.8; c.padDown(3, .7);
 p = c.compute(new PulsarParams());

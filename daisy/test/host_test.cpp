@@ -55,6 +55,15 @@ static void controlsTests() {
     NEAR(k.Bpm(), 120, 0.5, "clock 120 bpm");
     k.Midi(0x90, 62, 100, t); NEAR(fund(k), 8.0, 0.01, "D4 = 1/8 one octave up");
     k.Tick(t + 1); CHECK(k.extBpm == 0.f, "clock loss");
+    {   // delay time ignores +-1 ms clock jitter
+        Controls d; double u = 0; uint32_t seed = 1;
+        auto rnd = [&]() { seed = seed * 1664525u + 1013904223u; return (seed >> 8) / 16777216.0 - 0.5; };
+        for (int i = 0; i < 96; i++) { d.Midi(0xF8, 0, 0, u + rnd() * 0.002); u += tick; }
+        Params pp; d.Compute(pp); const float d0 = pp.delaySec; float dMax = 0.f;
+        for (int i = 0; i < 480; i++) { d.Midi(0xF8, 0, 0, u + rnd() * 0.002); u += tick; d.Compute(pp); dMax = fmaxf(dMax, fabsf(pp.delaySec - d0)); }
+        CHECK(dMax == 0.f, "jittery clock: delay time stays put");
+        NEAR(d0, 0.375, 0.01, "delay 1/8 dotted at clock tempo");
+    }
 
     Controls th; th.knob[K_FUND] = 0.8f; th.PadDown(3, .7f); th.Compute(p);
     NEAR(p.thick, 0.8, 1e-6, "TONE: right fader = thick"); NEAR(p.glideSec, 0.0, 1e-9, "TONE pads: no glide");

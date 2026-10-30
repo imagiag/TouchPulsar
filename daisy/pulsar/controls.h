@@ -53,9 +53,11 @@ public:
     float bendRange = 2.f;
     bool rootFromMidi = false;
     float extBpm = 0.f;
+    float dlyBpm = 0.f;     // clock tempo for the delay: moves only on changes > 1%, so jitter doesn't bend the repeats
 
     float tempo = 90.f;     // BPM: tap P10, P10 + P00/P02, or MIDI clock
     float Bpm() const { return extBpm > 0.f ? extBpm : tempo; }
+    float DelayBpm() const { return extBpm > 0.f && dlyBpm > 0.f ? dlyBpm : tempo; }
     bool ToHeld() const { return touched[P_TO]; }
     bool ChHeld() const { return touched[P_CH]; }
     bool Chromatic() const { return scale == 0; }

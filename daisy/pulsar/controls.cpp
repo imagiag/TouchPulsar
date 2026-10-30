@@ -276,6 +276,7 @@ void Controls::clock(double t) {
     if (clockN_ >= 7) {
         const float b = (float)(60.0 * (clockN_ - 1) / ((clockTimes_[clockN_ - 1] - clockTimes_[0]) * 24.0));
         if (b > 20.f && b < 400.f) extBpm = extBpm > 0.f ? extBpm + (b - extBpm) * 0.3f : b;
+        if (extBpm > 0.f && !(fabsf(extBpm - dlyBpm) <= 0.01f * dlyBpm)) dlyBpm = extBpm;
     }
     if (clockCount_ % 24 == 0) sync_++;
     clockCount_++;
@@ -370,7 +371,7 @@ void Controls::Compute(Params& out) const {
     out.inputGain = pcExp(alt[K_MASK], 0.25f, 4.f); // P10 + S35: -12..+12 dB, centre = 0 dB
     out.motion = ch[K_SPREAD];
     out.chorus = alt[K_FUND];
-    out.delaySec = fminf(2.4f, 60.f / bpm * kDelayBeats[(int)lroundf(ch[K_FORMANT] * 7.f)]);
+    out.delaySec = fminf(2.4f, 60.f / DelayBpm() * kDelayBeats[(int)lroundf(ch[K_FORMANT] * 7.f)]);
     out.delayAmt = ch[K_CLUSTER];
 }
 

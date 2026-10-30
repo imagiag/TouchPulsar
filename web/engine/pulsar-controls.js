@@ -105,12 +105,14 @@ function PulsarControls() {
   this.clockTimes = [];      // recent MIDI clock arrival times (s)
   this.clockCount = 0;
   this.extBpm = 0;           // >0 while external clock is running
+  this.dlyBpm = 0;           // clock tempo for the delay: moves only on changes > 1%, so jitter doesn't bend the repeats
   this.lastClockAt = -1;
   this.sync = 0;             // increments on each beat to phase-align the engine
   this.midiActivity = 0;     // time of last MIDI message (UI blink)
 }
 
 PulsarControls.prototype.bpm = function () { return this.extBpm > 0 ? this.extBpm : this.tempo; };
+PulsarControls.prototype.delayBpm = function () { return this.extBpm > 0 && this.dlyBpm > 0 ? this.dlyBpm : this.tempo; };
 PulsarControls.prototype.range = function () { return this.sw[PC.SW_RANGE]; };
 PulsarControls.prototype.toHeld = function () { return !!this.touched[PC.P_TO]; };
 PulsarControls.prototype.chHeld = function () { return !!this.touched[PC.P_CH]; };
@@ -351,6 +353,7 @@ PulsarControls.prototype._clock = function (t) {
   if (ct.length >= 7) {
     var b = 60 * (ct.length - 1) / ((ct[ct.length - 1] - ct[0]) * 24);
     if (b > 20 && b < 400) this.extBpm = this.extBpm > 0 ? this.extBpm + (b - this.extBpm) * 0.3 : b;
+    if (this.extBpm > 0 && !(Math.abs(this.extBpm - this.dlyBpm) <= 0.01 * this.dlyBpm)) this.dlyBpm = this.extBpm;
   }
   if (this.clockCount % 24 === 0) this.sync++;
   this.clockCount++;
@@ -453,7 +456,7 @@ PulsarControls.prototype.compute = function (out) {
   out.inputGain = pcExp(A[PC.K_MASK], 0.25, 4); // P10 + S35: -12..+12 dB, centre = 0 dB
   out.motion = this.ch[PC.K_SPREAD];
   out.chorus = A[PC.K_FUND];
-  out.delaySec = Math.min(2.4, 60 / bpm * PC.DELAY_BEATS[this.delayStep()]);
+  out.delaySec = Math.min(2.4, 60 / this.delayBpm() * PC.DELAY_BEATS[this.delayStep()]);
   out.delayAmt = this.ch[PC.K_CLUSTER];
   return out;
 };
