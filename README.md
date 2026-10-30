@@ -21,6 +21,8 @@ Based on Curtis Roads, *Sound Composition with Pulsars*, Journal of the Audio En
 python3 web/serve.py        # local server that never caches, so changes always load
 ```
 
+On Windows: `py -3 web/serve.py`.
+
 Open <http://localhost:8765>, press **Start audio** (or touch any pad), pick a preset. The page has to be served over http (not opened as a file) because the AudioWorklet is loaded with `fetch`.
 
 Offline engine test (renders WAVs, checks for NaN/clipping, measures CPU):

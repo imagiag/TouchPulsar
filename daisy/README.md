@@ -183,6 +183,7 @@ $ make program-dfu
 ```
 - `make DEBUG=1` prints audio CPU load over USB serial once a second (USB MIDI is off in this mode).
 - `make -C test` checks the engine on your computer and compares its sound with the browser prototype in `../web`.
+- **Browser prototype**: `python3 web/serve.py` (Windows: `py -3 web/serve.py`) from the repository folder, then open http://localhost:8765. The same engine and controls in the browser; **Enable MIDI** plays it from a keyboard on your computer.
 
 ## Credits
 - Pulsar synthesis: Curtis Roads, *Sound Composition with Pulsars*, Journal of the Audio Engineering Society 49(3), 2001.
