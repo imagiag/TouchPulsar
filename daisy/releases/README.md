@@ -7,7 +7,7 @@ Flash these with https://flash.daisy.audio/ (BOOT + RESET, or hold BOOT while pl
 
 | File | Date | Changes |
 |---|---|---|
-| `PulsarTouch-v12-clock-delay.bin` | 2026-10-30 | Fix: with external MIDI clock the delay time no longer wobbles (the occasional "squeeze" on the repeats). The delay follows the clock tempo only when it changes by more than 1%. |
+| `PulsarTouch-v12-clock-delay.bin` | 2026-10-30 | With external MIDI clock, the delay time ignores tempo wobble under 1%, so ordinary clock jitter never bends the repeats. Otherwise identical to v11. |
 | `PulsarTouch-v11-layer-swap.bin` | 2026-10-28 | Layer swap: **Attack + Release** now both on P11 (S33/S34) and **Conv mix** on P11 + S35; **Lift** moved to P10 + S34 and **Input gain** to P10 + S35 (input LED meter now while P10 is held). CC numbers unchanged. |
 | `PulsarTouch-v10-delay.bin` | 2026-10-25 | **Delay**: ping-pong, P11 + S31 = time (synced to tempo, 1/16 … 1/2), P11 + S32 = amount (CC 108/109). Silent P01 recordings now give 1 long blink and keep the old sample. |
 | `PulsarTouch-v9-attack.bin` | 2026-10-24 | **Attack** on P11 + S33: 4 ms (default) to 3 s (CC 107). |
