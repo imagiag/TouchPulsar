@@ -122,7 +122,7 @@ TouchPulsar appears as a USB MIDI device (listed as **PulsarTouch** in your comp
 - **Pitch Bend**: ±2 semitones (CC 88 sets the range, 0–24).
 - **Glide**: Applied only when you play legato. TONE: a short fixed portamento (60 ms). RHYTHM: set by the right fader.
 - **Sustain** (CC 64): Holds released notes.
-- **MIDI Clock Sync**: Automatic. When clock arrives, RHYTHM follows its tempo and locks the pulses to the beat. **Start** resets the beat. If the clock stops for more than 0.5 s, TouchPulsar goes back to its own tempo.
+- **MIDI Clock Sync**: Automatic. When clock arrives, RHYTHM follows its tempo and locks the pulses to the beat. **Start** resets the beat. If the clock stops for more than 0.5 s, TouchPulsar goes back to its own tempo. TouchPulsar never sends clock itself. If the delay repeats now and then bend in pitch (like the delay time being moved), check the clock setup on the sending side: a keyboard set to both send and receive clock, or MIDI thru/echo in the routing app, can feed TouchPulsar a doubled or uneven clock (seen with an OP-1 Field).
 
 | CC | Control |
 |---|---|
