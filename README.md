@@ -2,7 +2,7 @@
 
 ### 🌐 Website: **[pulsar.imagiag.com](https://pulsar.imagiag.com)**
 
-**[Download firmware](https://github.com/imagiag/TouchPulsar/releases/latest)** · **[Manual](daisy/README.md)** · **[Website](https://pulsar.imagiag.com)**
+**[Download firmware](https://github.com/imagiag/TouchPulsar/releases/latest)** · **[Manual](https://pulsar.imagiag.com/manual)** · **[Website](https://pulsar.imagiag.com)**
 
 A pulsar synthesizer for the **Synthux Simple Touch** (Daisy Seed), prototyped in the browser first.
 
